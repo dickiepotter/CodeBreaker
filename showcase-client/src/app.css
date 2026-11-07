@@ -31,6 +31,8 @@ html, body {
 }
 
 code, .mono { font-family: 'Cascadia Code', 'Consolas', monospace; }
+/* Hashes, keys and hex have no spaces to break at; let them wrap anywhere rather than spill out of their panel. */
+.mono, .output, code { overflow-wrap: anywhere; }
 a { color: var(--accent); }
 
 .boot { padding: 3rem; color: var(--muted); }
@@ -119,10 +121,12 @@ button:disabled { opacity: .5; cursor: default; }
 table { border-collapse: collapse; width: 100%; font-size: .85rem; }
 th, td { text-align: left; padding: .4rem .55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--muted); font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .04em; }
-td.n { font-family: 'Cascadia Code', monospace; white-space: nowrap; }
+td.n { font-family: 'Cascadia Code', monospace; }
+/* Numbers stay whole, but long values ("3.67 × 10^62 years (…)") may wrap at their spaces. */
+.nowrap { white-space: nowrap; }
 
 /* ---- verdict chips ---- */
-.chip { display: inline-block; padding: .1rem .5rem; border-radius: 999px; font-size: .75rem; font-weight: 600; color: #0e1320; white-space: nowrap; }
+.chip { display: inline-block; padding: .1rem .5rem; border-radius: 10px; font-size: .75rem; font-weight: 600; color: #0e1320; line-height: 1.35; }
 .f-Instant { background: var(--f-instant); }
 .f-FewMinutes { background: var(--f-minutes); }
 .f-Hours { background: var(--f-hours); }
@@ -203,3 +207,20 @@ td.n { font-family: 'Cascadia Code', monospace; white-space: nowrap; }
 .engine { font-size: .78rem; color: var(--muted); }
 .engine b { color: var(--accent); font-weight: 600; }
 .loading { padding: 3rem 0; color: var(--muted); }
+
+/* ---- tables that fit a panel, and become stacked cards on a phone (.ladder, .stack-sm) ---- */
+.ladder td:nth-child(1) { width: 24%; }
+.ladder td:nth-child(2) { width: 9%; }
+.ladder td:nth-child(3) { width: 18%; }
+.ladder td:nth-child(5) { width: 18%; }
+@media (max-width: 700px) {
+    .ladder thead, .stack-sm thead { display: none; }
+    .ladder, .ladder tbody, .ladder tr, .ladder td,
+    .stack-sm, .stack-sm tbody, .stack-sm tr, .stack-sm td { display: block; width: 100% !important; }
+    .ladder tr, .stack-sm tr { border-bottom: 1px solid var(--line); padding: .5rem 0; }
+    .ladder td, .stack-sm td { border: none; padding: .15rem 0; }
+    .ladder td[data-label]::before, .stack-sm td[data-label]::before {
+        content: attr(data-label); display: block;
+        color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
+    }
+}

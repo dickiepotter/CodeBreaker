@@ -170,22 +170,20 @@ e = {key.e}</div>
 
     {#if key}
       <h3>How the work grows (log₂ of operations)</h3>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>Modulus</th><th>Trial division</th><th>Pollard's rho</th><th>Number field sieve</th><th>NFS on the Bitcoin network</th></tr></thead>
-          <tbody>
-            {#each key.work as w}
-              <tr>
-                <td class="n">{w.bits} bits</td>
-                <td class="n">{w.trial.toFixed(0)}</td>
-                <td class="n">{w.rho.toFixed(0)}</td>
-                <td class="n">{w.nfs.toFixed(0)}</td>
-                <td class="n">{onBitcoin(w.nfs)}</td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
+      <table class="stack-sm">
+        <thead><tr><th>Modulus</th><th>Trial division</th><th>Pollard's rho</th><th>Number field sieve</th><th>NFS on the Bitcoin network</th></tr></thead>
+        <tbody>
+          {#each key.work as w}
+            <tr>
+              <td class="n nowrap"><b>{w.bits} bits</b></td>
+              <td class="n" data-label="Trial division">{w.trial.toFixed(0)}</td>
+              <td class="n" data-label="Pollard's rho">{w.rho.toFixed(0)}</td>
+              <td class="n" data-label="Number field sieve">{w.nfs.toFixed(0)}</td>
+              <td class="n" data-label="NFS on the Bitcoin network">{onBitcoin(w.nfs)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
       <p class="note">
         Rough (constant factors ignored), but the shape is right: 512 bits fell in 1999; 2048 is far out of reach of any
         classical computer.

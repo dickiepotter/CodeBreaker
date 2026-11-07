@@ -50,7 +50,7 @@
       <line class="grid" x1={x(b)} x2={x(b)} y1={Top} y2={Top + rows.length * RowHeight} />
       <text x={x(b)} y={Top - 8} text-anchor="middle">{b}</text>
     {/each}
-    <text x={x(MaxBits) + 6} y={Top - 8}>bits</text>
+    <text x={LabelWidth - 8} y={Top - 8} text-anchor="end">bits →</text>
 
     {#each rows as p, i}
       {@const y = Top + i * RowHeight}
@@ -80,31 +80,31 @@
 </div>
 
 <h2>The ladder in numbers</h2>
-<div class="panel tablewrap">
-  <table>
+<div class="panel">
+  <table class="ladder">
     <thead>
       <tr>
-        <th>Cipher</th><th>Era</th><th>Key space</th><th>Brute force</th><th>Best attack</th><th>Work</th><th>Time</th><th>Why so much less</th>
+        <th>Cipher</th><th>Key space</th><th>Brute force</th><th>Best attack, and why it needs so much less</th><th>Time, best attack</th>
       </tr>
     </thead>
     <tbody>
       {#each rows as p}
         {@const t = p.times[shared.attacker]}
         <tr>
-          <td><b>{p.name}</b><div class="note">{p.famous}</div></td>
-          <td>{p.era}</td>
-          <td class="n">{bits(p.keySpaceBits)}</td>
-          <td class="n">{t.brute.text}</td>
-          <td>{p.attack}</td>
-          <td class="n">{p.breakable ? bits(p.effectiveBits) : '—'}</td>
-          <td>
+          <td><b>{p.name}</b><div class="note">{p.era} · {p.famous}</div></td>
+          <td class="n nowrap" data-label="Key space">{bits(p.keySpaceBits)}</td>
+          <td class="n" data-label="Brute force">{t.brute.text}</td>
+          <td data-label="Best attack">
+            {p.attack}{#if p.breakable}<span class="note"> — {bits(p.effectiveBits)} of work</span>{/if}
+            <div class="note">{p.explanation}</div>
+          </td>
+          <td data-label="Time, best attack">
             {#if p.breakable}
               <span class="chip f-{t.best.feasibility}">{t.best.text}</span>
             {:else}
               <span class="chip never">impossible</span>
             {/if}
           </td>
-          <td class="note">{p.explanation}</td>
         </tr>
       {/each}
     </tbody>
