@@ -273,8 +273,19 @@ public static class ShowcaseApi
             default: throw new ArgumentException($"There is no attack called '{attack}'.");
         }
 
+        BreakCheck check = BreakCheck.Check(result, attack == "XOR" ? string.Empty : ciphertext, options);
         return new JsonObject
         {
+            ["check"] = new JsonObject
+            {
+                ["confidence"] = check.Confidence.ToString(),
+                ["summary"] = check.Summary,
+                ["reasons"] = Strings(check.Reasons),
+                ["cribsFound"] = Strings(check.CribsFound),
+                ["cribsMissing"] = Strings(check.CribsMissing),
+                ["letters"] = check.Letters,
+                ["lettersNeeded"] = check.LettersNeeded,
+            },
             ["cipher"] = result.CipherName,
             ["key"] = result.Key,
             ["plaintext"] = result.Plaintext,

@@ -29,6 +29,7 @@ library compiled to WebAssembly, running in a Web Worker behind a Svelte front e
 - [How known information shrinks the search](#how-known-information-shrinks-the-search)
 - [When no amount of computing will do: unicity distance](#when-no-amount-of-computing-will-do-unicity-distance)
 - [Teaching a computer what English looks like](#teaching-a-computer-what-english-looks-like)
+- [Is the answer right? Checking before believing](#is-the-answer-right-checking-before-believing)
 - [The first look: what kind of cipher is it?](#the-first-look-what-kind-of-cipher-is-it)
 - [The ciphers, one by one](#the-ciphers-one-by-one)
   - [Caesar, ROT13 and Atbash](#caesar-rot13-and-atbash)
@@ -51,6 +52,7 @@ library compiled to WebAssembly, running in a Web Worker behind a Svelte front e
 - [Common situations, and what to do](#common-situations-and-what-to-do)
 - [Using the library](#using-the-library)
 - [The demo website](#the-demo-website)
+  - [Finding your way around the site](#finding-your-way-around-the-site)
 - [Building, testing and deploying](#building-testing-and-deploying)
 - [Code reused from other projects, and keeping it in sync](#code-reused-from-other-projects-and-keeping-it-in-sync)
 - [Points of interest](#points-of-interest)
@@ -107,9 +109,26 @@ A few principles run through everything:
 - **Crib** — a piece of plaintext the code breaker believes is in the message, because of its context:
   WETTERBERICHT ("weather report") at the start of a German weather report, DEAR at the start of a
   letter. Bletchley Park slang, now standard.
+- **Searcher** — who, or what, is trying keys, and how fast: a clerk with pencil and paper, a wartime
+  bombe, a laptop, a graphics card, the whole Bitcoin network (`Attacker`).
+- **A few minutes** — five, exactly. The question asked of every cipher here is whether the work left
+  fits in five minutes for the chosen searcher.
+- **Frequency analysis** — counting letters. English uses E, T and A a lot and Z hardly at all; a cipher
+  that keeps that unevenness gives itself away.
+- **Index of coincidence** — the chance that two letters picked at random from a text are the same:
+  0.066 for English, 0.038 for random letters. It tells you whether a cipher used one alphabet or many.
+- **Hill climbing** — start with a random key, change it a little, keep the change if the text reads
+  more like English, and repeat. It works when a nearly-right key gives nearly-right text.
+- **Quadgram score** — how English a text looks, from how common its runs of four letters (TION, THER…)
+  are in real English. The "fitness" every hill climb tries to raise.
+- **Unicity distance** — roughly how many letters of ciphertext are needed before only one key gives
+  sensible text. Shorter messages can decrypt to several believable answers.
 - **Cryptography** is making ciphers; **cryptanalysis** is breaking them. Together they are
   **cryptology**.
 - **Code** and **cipher** mean different things — see the next section.
+
+The [showcase](https://dickiepotter.github.io/CodeBreaker/) has the same glossary at the foot of its
+difficulty ladder page.
 
 ---
 
@@ -362,6 +381,15 @@ Start: 26! orderings of the alphabet                ≈ 4.03 × 10^26 keys (88.4
 Thirty bits gone from two short words. For Enigma, cribs are not a help but the *whole method* —
 without one, the bombe has nothing to reason from.
 
+A crib with no repeated letters is much weaker, because its pattern (`ABCD`) matches almost anywhere:
+in a 129-letter test message WAIT fits at 104 of the 126 places it could start. Only one is right, and
+a crib placed in the wrong place doesn't just fail to help — it *forces* four wrong letters into the
+key, and the climb then dutifully finds the best text it can around them. An early version of the
+substitution attack tried only the first six places, which on that message never included the right
+one; it returned confident-looking nonsense with WAIT in it. Now `SubstitutionAttack` screens *every*
+placement with one quick climb and spends its full search on the three most promising. Long cribs with
+repeated letters are still far better: they fit in a handful of places, so there is little to screen.
+
 ### 4. Known plaintext — a stretch of message and its ciphertext together
 
 Stronger than a crib, because you know *where* it goes. For the Hill cipher four letters of known
@@ -489,6 +517,85 @@ Set `AttackOptions.Language` to match the traffic.
 
 ---
 
+## Is the answer right? Checking before believing
+
+Every attack in this library returns its *best* key. The best of a bad lot is still wrong, and an
+attack can't tell the difference on its own: a hill climb stuck on a foothill, a crib placed in the
+wrong spot, or a message too short to pin the key down all produce text that looks, at a glance, like
+an answer. Bletchley Park never believed a bombe stop until it had been tried on a replica Enigma and
+the message read. `BreakCheck` is that check, and it asks three blunt questions:
+
+1. **Is every crib in it?** If you were sure the message contained BRIDGE and the answer doesn't, the
+   answer is wrong — or the crib is (misspelt, the wrong language, or simply not in this message).
+   Nothing else is so decisive, which is one more reason to give cribs.
+2. **Does it read?** On the [quadgram score](#quadgrams), real text sits around −4.0 to −4.5 per letter
+   and random letters at −6 or lower. Above −4.7 reads clearly; below −5.1 is gibberish; in between is
+   the half-readable text of a nearly-right key.
+3. **Was there enough of it?** Below the [unicity distance](#when-no-amount-of-computing-will-do-unicity-distance)
+   several keys give sensible text, and a hill climb has too little to steer by long before that. Each
+   attack has a rough length below which its answer shouldn't be trusted without help:
+
+| Attack | Letters needed, roughly |
+|---|---|
+| Caesar | 15 |
+| Affine | 20 |
+| Rail fence | 25 |
+| Vigenère, Beaufort | 40 |
+| Hill (2 × 2) | 60 |
+| Columnar transposition | 60 |
+| Autokey | 80 |
+| Simple substitution, Polybius | 100 |
+| Playfair | 150 |
+
+These are rules of thumb from running the attacks here, not theorems. A crib found in the answer
+lowers them a long way (by five letters for each letter of crib, but never below twenty).
+
+The verdict is one of three:
+
+- **Solved** — it reads, it holds every crib, and the message was long enough.
+- **Doubtful** — it partly reads, or it reads well but the message is too short to be sure.
+- **Failed** — a crib is missing, the text is gibberish, or no key survived.
+
+```csharp
+var options = new AttackOptions { Cribs = ["DAWN"] };
+BreakResult r = SubstitutionAttack.Break(ciphertext, options);
+BreakCheck check = BreakCheck.Check(r, ciphertext, options);
+Console.WriteLine($"{check.Confidence}: {check.Summary}");
+foreach (string reason in check.Reasons) Console.WriteLine(reason);
+```
+
+The check exists because a reader tried exactly that on the site — encrypted a sentence, added a crib,
+pressed *Break it* — and got a confident answer that was completely wrong. Running every cipher that way
+turned up five separate causes, all now fixed, and each a small lesson:
+
+- **The statistics chose the wrong cipher.** On 49 letters, a rail fence's letter counts look more like a
+  substitution's than a transposition's (`CipherIdentifier` said "substitution, 75%" and didn't suggest
+  transposition at all). `AutoBreaker` used to stop at the first answer that looked a little English; now
+  it stops only on a convincing one, otherwise runs the other quick attacks too, and always prefers an
+  answer that contains the cribs.
+- **A wrong answer out-scored the right one.** On the same short message enciphered with an affine key,
+  the substitution climb found nonsense scoring −4.437 per letter, a whisker better than the true
+  affine decryption's −4.453. A substitution has 88 bits of key to bend to fit 49 letters; an affine key
+  has 8. So `AutoBreaker` now ranks first by cribs, then by whether the message is long enough to trust
+  that attack, and only then by score. Over-fitting is what too many keys and too little text look like.
+- **The crib was put in the wrong place** — the substitution placement problem described [under
+  cribs](#3-cribs--words-the-context-suggests).
+- **The crib was thrown away.** The Hill attack solved cribs only by algebra, which fails when the crib's
+  letter pairs don't form an invertible matrix (DAWN's don't). It now uses such a crib row by row
+  instead — see [Hill](#hill).
+- **Arithmetic that only works with real numbers.** `NumberTheory.MatrixInverse` used Gauss–Jordan
+  elimination, the school method, which divides by a "pivot" in each column. Modulo 26 you can't divide by
+  13 or by any even number, so a matrix like [[13, 7], [14, 19]] — perfectly invertible, its determinant
+  19 has an inverse — had no usable pivot and was declared impossible. About one valid Hill key in twenty
+  (7,488 of 157,248) was wrongly rejected, and the attack crashed when it met one. The inverse is now worked out from the
+  determinant (the adjugate divided by the determinant), which only ever divides by the determinant
+  itself. The test suite now checks every one of the 456,976 matrices.
+
+On the site the verdict appears as a coloured banner above every answer on the Break page, with the
+cribs it found and didn't, and the reasons.
+
+---
+
 ## The first look: what kind of cipher is it?
 
 Before any key is guessed, statistics usually reveal what kind of cipher you are facing. The library
@@ -595,7 +702,19 @@ graph TD
 
 A Playfair check runs alongside: even length, no J, and no pair that is a double letter is exactly
 what Playfair produces. `AutoBreaker.BreakAsync` goes one step further — identify, run the matching
-attacks, return the result that reads most like English.
+attacks, and return the most trustworthy result. The identification only sets the *order*: on short
+messages it can be wrong, so unless an early answer is convincing (the check calls it solved, and a crib
+confirms it or it reads very clearly), the other quick attacks run too, and the answers are ranked by
+[`BreakCheck.MostTrusted`](#is-the-answer-right-checking-before-believing) — cribs first, then whether
+the message is long enough for that attack, then the score.
+
+Running "the other attacks too" has a cost, and one attack dominates it: the columnar search, about a
+second natively and far longer in a browser. So Auto skips it unless it could possibly be right. A
+transposition only moves letters, so its letter counts are exactly the language's: chi-squared per letter
+is about 0.1–0.7 for any transposition and 3 or more for anything that changes letters. (The chi-squared
+*p-value* won't do here: on a long text it "rejects" genuine English over tiny differences of style.) And
+when the quick rail-fence attack has already produced a convincing answer, the columnar search is skipped
+altogether.
 
 ---
 
@@ -669,7 +788,10 @@ in 69 milliseconds, and read it perfectly. With cribs the letters they pin are n
 [known information](#3-cribs--words-the-context-suggests)).
 
 **A few minutes?** Well under a second, given a hundred or two letters. Below about 28 letters — the
-[unicity distance](#when-no-amount-of-computing-will-do-unicity-distance) — no method can be sure.
+[unicity distance](#when-no-amount-of-computing-will-do-unicity-distance) — no method can be sure, and
+in practice the climb needs about a hundred: on fifty letters it often settles on a key that reads
+*almost* well, with a few letters wrong. Short messages get more restarts automatically (they are
+cheap), and `BreakCheck` marks the answer doubtful.
 
 ### Polybius square
 
@@ -712,7 +834,10 @@ Keys were often words themselves, so sliding a crib along and reading the fragme
 the right position by eye. With a crib, the attack tries every period and keeps the one where the crib
 gives a self-consistent key — enough to break a 42-letter message whose statistics alone say nothing.
 
-**A few minutes?** About 30 milliseconds for the 327-letter example.
+**A few minutes?** About 30 milliseconds for the 327-letter example — provided the key length is within
+the search. The attack looks at periods up to `AttackOptions.MaxKeyLength` (12 by default, *Longest
+key* on the site). A 13-letter key such as FORTIFICATION is then simply not considered, and the attack
+returns the best 12-or-fewer-letter key, which is gibberish; raise the limit and it falls at once.
 
 ### Autokey
 
@@ -796,6 +921,12 @@ it by an n × n key matrix, modulo 26. With key [[3, 3], [2, 5]], HE = (7, 4) be
   the first letter of every pair and nothing else. So each row is found separately by trying its 26² =
   676 values and asking which gives English letter frequencies; then the best rows are paired up and
   scored on quadgrams. 2 × 676 = 1,352 trials, not 157,248 — the product-into-sum trick once more.
+- **A crib the algebra can't use — row by row.** The algebra needs the crib's letter pairs to form an
+  invertible matrix, and often they don't: DAWN's pairs (D, A) and (W, N) give a determinant of 13,
+  which has no inverse modulo 26. But each row of D must still turn the ciphertext under the crib into
+  the crib's letters, so at each place the crib could sit, keep only the rows that do. On a 49-letter
+  message that left 13 candidates for each row, 144 valid matrices across every placement, and the
+  right one read at once — where the frequency method, with so few letters, had nothing to go on.
 
 Instant either way.
 
@@ -1144,14 +1275,20 @@ Choose long cribs with repeated letters — they fit in fewer places.
 Subtract them (`TwoTimePadAttack.DragCrib`) and drag likely words.
 
 **"It's short."** Short texts starve frequency analysis. Lean on cribs, raise `Restarts`, and accept that
-below the unicity distance the answer may not be unique.
+below the unicity distance the answer may not be unique. `BreakCheck` says how many letters each attack
+usually needs; below that, treat any answer as a guess.
 
 **"It isn't English."** Set `AttackOptions.Language` (English and German are built in; another language
 needs its own tables from `tools/build_language_data.py`).
 
-**"The attack returned rubbish."** Look at `BreakResult.Log` and `EnglishLikeness`. Below about −5.1 per
-window the attack has not found English: try a different cipher family, a larger `MaxKeyLength`, more
-`Restarts` (the climbs are randomised; another `Seed` may succeed), or a crib.
+**"The attack returned rubbish."** Run `BreakCheck.Check` on it, and look at `BreakResult.Log`. A missing
+crib or a score below about −5.1 per letter means the attack has not found the answer: try a different
+cipher family, a larger `MaxKeyLength`, more `Restarts` (the climbs are randomised; another `Seed` may
+succeed), or a crib.
+
+**"It returned something plausible, but I'm not sure."** That is what `Doubtful` is for. Check the
+length against the table in [checking the answer](#is-the-answer-right-checking-before-believing), and
+add a crib: a wrong key almost never produces your crib by accident.
 
 **"It's a modern cipher."** Don't attack the cipher. Attack the key: how was it chosen, and from how
 large a set? That is where real systems fail.
@@ -1179,6 +1316,10 @@ Console.WriteLine(LanguageModel.English.Segment(r.Plaintext));
 Console.WriteLine(r.Difficulty);                            // the funnel
 Console.WriteLine(r.Difficulty.RemainingWork(Attacker.PencilAndPaper));
 
+// Don't believe it until it's checked.
+BreakCheck check = BreakCheck.Check(r, secret, new AttackOptions { Cribs = ["TIMES"] });
+Console.WriteLine(check.Confidence);                        // Solved
+
 // The long searches are async, and can report progress and be cancelled.
 var options = new AttackOptions
 {
@@ -1192,7 +1333,7 @@ BreakResult p = await PlayfairAttack.BreakAsync(playfairText, options);
 
 | Namespace | What lives there |
 |---|---|
-| `RP.CodeBreaker` | `Letters`, `KeySpace`, `Attacker`, `WorkEstimate`, `Difficulty`, `ICipher`, `BreakResult`, `AttackOptions`, `LanguageModel`, `FrequencyAnalysis`, `Periodicity`, `WordPatterns`, `CipherIdentifier`, `NumberTheory`, `CipherCatalogue` |
+| `RP.CodeBreaker` | `Letters`, `KeySpace`, `Attacker`, `WorkEstimate`, `Difficulty`, `ICipher`, `BreakResult`, `BreakCheck`, `AttackOptions`, `LanguageModel`, `FrequencyAnalysis`, `Periodicity`, `WordPatterns`, `CipherIdentifier`, `NumberTheory`, `CipherCatalogue` |
 | `RP.CodeBreaker.Ciphers` | every cipher, `EnigmaMachine` and its parts, `CipherRegistry`, `MorseCode` |
 | `RP.CodeBreaker.Codes` | `ICode` and every code, `CodeCatalogue` |
 | `RP.CodeBreaker.Attacks` | one class per attack, `BruteForce`, `AutoBreaker`, `EnigmaBombe` |
@@ -1242,15 +1383,53 @@ graph LR
 Both answer every request identically, because both call the one `ShowcaseApi`. The pages are the
 difficulty ladder (with the "few minutes" line for any attacker), a two-way converter for every code and
 cipher, an analysis workbench (frequency charts, IoC, period finding, Kasiski, cipher identification), the
-code breaker (every attack, with cribs, progress, cancel and the difficulty funnel), an Enigma simulator
-and bombe (with the menu drawn as a graph), the famous cases, and the modern section (RSA factoring, PIN
-and dictionary cracking, a key-space calculator).
+code breaker (every attack, with cribs, progress, cancel, the difficulty funnel and a verdict on the
+answer), an Enigma simulator and bombe (with the menu drawn as a graph), the famous cases, and the modern
+section (RSA factoring, PIN and dictionary cracking, a key-space calculator).
 
 WebAssembly in the browser is interpreted, so the heavy searches are several times slower than native
 .NET — though less than you might fear. Measured in Chrome: the Babington substitution solves in about
 70 ms, and the bombe over rotors I, II and IV in about 5 seconds (0.6 s natively); over all five rotors,
 allow a minute or so. Hashing is much slower in the browser, so the dictionary attack there uses a short
 word list.
+
+### Finding your way around the site
+
+Every page opens with a green **How to use this page** box — the steps in order, and what to look for —
+which stays closed once you close it. Inside the panels, **▸ What am I looking at?** links open a short
+explanation of each chart, number and result. This section is the same tour, for reading here.
+
+If you have ten minutes, take the pages in this order:
+
+1. **Convert.** Pick a cipher, type a few sentences (the attacks need text to count — a hundred letters
+   or more for the harder ciphers), press *Encrypt ↓*. The green box shows how many keys the cipher could
+   have used and how long trying them all would take on a laptop: the upper limit, not the real
+   difficulty. *Random key* makes a sensible key, and *Analyse this ciphertext →* and *Try to break it →*
+   carry your ciphertext to the next two pages. The left-hand panel does the same for codes, which have no
+   key at all.
+2. **Analyse.** The first look, with no key. Five numbers across the top — letters, index of coincidence,
+   entropy, chi-squared against English, Friedman's key-length estimate — then the letter counts against
+   English, and for a repeating key, a chart of every period with the likely one in green. "What is it
+   likely to be?" gives the families with their reasons. See [the first look](#the-first-look-what-kind-of-cipher-is-it).
+3. **Break.** Choose an attack, or leave it on *Auto*; the line under the menu says how the chosen attack
+   works. Add a crib if you have one. Press *Break it* and watch the best text so far as it searches.
+   The answer comes with a **verdict** — ✓ Solved, ? Doubtful or ✗ Wrong — and its reasons (see
+   [checking the answer](#is-the-answer-right-checking-before-believing)); then the funnel on the right
+   shows the key space shrinking at each insight. *Restarts*, *Longest key* and *Iterations* can stay as
+   they are unless an answer comes back half-readable.
+4. **Enigma & bombe.** On the left, a machine to type on: the lamps, and the rotor windows after every key
+   press, with the double step marked. On the right, the bombe: the WETTERBERICHT case is loaded, the
+   places the crib can sit are highlighted (Enigma never enciphers a letter to itself), the menu is drawn
+   as a graph with its loops counted, and *Run the bombe* recovers the settings and the message. See
+   [breaking Enigma](#breaking-enigma-the-bombe).
+5. **Famous cases.** One card per episode, with the story, the ciphertext (a badge marks the real ones),
+   the cribs the situation would have given, and a button that takes the message to the right page with
+   everything filled in. VENONA's card has crib dragging built in.
+6. **Modern.** Make a toy RSA key and factor it four ways, then move the slider and watch the work grow;
+   crack a PIN and a password from their SHA-256 hashes; and work out any key space with the calculator.
+
+The [difficulty ladder](#the-difficulty-ladder-what-falls-in-a-few-minutes) — the home page — ties it
+together, and has the glossary at its foot.
 
 ## Building, testing and deploying
 
@@ -1286,7 +1465,7 @@ Actions**. `.github/workflows/ci.yml` builds, tests and packs the library on eve
 
 ```
 RP.CodeBreaker/
-  Core/         Letters, KeySpace, WorkEstimate, Difficulty, ICipher, BreakResult, NumberTheory, CipherCatalogue
+  Core/         Letters, KeySpace, WorkEstimate, Difficulty, ICipher, BreakResult, BreakCheck, NumberTheory, CipherCatalogue
   Language/     LanguageModel and its embedded English and German tables (Data/*.gz)
   Analysis/     FrequencyAnalysis, Periodicity, WordPatterns, CipherIdentifier
   Ciphers/      the ciphers, Enigma, CipherRegistry
@@ -1372,7 +1551,8 @@ Things deliberately not yet built, recorded so the reasoning isn't lost:
 New, and complete for what it sets out to do: sixteen ciphers and the Enigma machine, ten codes, attacks
 that break every cipher in the catalogue that has a practical attack (on realistic messages), a bombe
 that recovers full Enigma settings from a crib, English and German language models, a difficulty model
-behind all of it, a Svelte showcase that runs the library in a Web Worker, and fifty tests. It targets
+behind all of it, a check on every answer, a Svelte showcase that runs the library in a Web Worker and
+explains itself as you use it, and sixty-two tests. It targets
 .NET 10. It was started in November 2026, shortly after a visit
 to Bletchley Park.
 

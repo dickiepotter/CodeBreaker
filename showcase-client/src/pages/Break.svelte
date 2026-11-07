@@ -182,6 +182,24 @@
 
     {#if result}
       <section class="panel">
+        {#if result.check}
+          {@const v = result.check}
+          <div class="verdict verdict--{v.confidence}">
+            <div class="verdict__head">
+              <span class="verdict__badge">{({ Solved: '✓ Solved', Doubtful: '? Doubtful', Failed: '✗ Wrong' })[v.confidence]}</span>
+              <b>{v.summary}</b>
+            </div>
+            {#if v.cribsFound.length + v.cribsMissing.length > 0}
+              <div class="verdict__cribs">
+                {#each v.cribsFound as c}<span class="crib crib--in">{c} ✓</span>{/each}
+                {#each v.cribsMissing as c}<span class="crib crib--out">{c} ✗ not in the answer</span>{/each}
+              </div>
+            {/if}
+            {#if v.reasons.length > 0}
+              <ul>{#each v.reasons as reason}<li>{reason}</li>{/each}</ul>
+            {/if}
+          </div>
+        {/if}
         <h3>{result.cipher} — key {result.key}</h3>
         <div class="stats">
           <div class="result">
@@ -194,12 +212,25 @@
           <div class="result"><span class="result__label">Keys tried</span><div class="result__num">{thousands(result.keysTried)}</div><div class="result__sub">compare with the funnel's first bar</div></div>
           <div class="result"><span class="result__label">Time {inBrowser ? 'here' : 'on the server'}</span><div class="result__num">{ms(result.elapsedMs)}</div></div>
         </div>
-        <Explain title="How does it know it has the answer?">
+        <Explain title="How does it know it has the answer — and when is it wrong?">
           <p>
             The computer can't read, so it scores text by how common its four-letter runs are in real English (or German):
             TION and THER score well, QXZJ terribly. That score, averaged per letter, is the <b>Reads as</b> figure: about
             −4.4 for real text, −6 or lower for gibberish.
           </p>
+          <p>
+            An attack always hands back its <i>best</i> key, and the best of a bad lot is still wrong. So every answer is
+            checked before it is believed, as Bletchley checked every bombe stop on a replica Enigma:
+          </p>
+          <ul>
+            <li><b>Every crib must be in it.</b> If you were sure of a word and the answer lacks it, the answer is wrong —
+              or the crib is.</li>
+            <li><b>It must read.</b> Above −4.7 per letter is clear text; below −5.1 is gibberish; in between is the
+              half-readable text of a nearly-right key.</li>
+            <li><b>There must be enough of it.</b> Each attack needs a certain length of message before its answer can be
+              trusted — about 15 letters for Caesar, 100 for a substitution, 150 for Playfair. Below that, wrong keys can
+              give believable text. A crib lowers the bar a long way.</li>
+          </ul>
           <p>
             "Keys tried" is the real work done. Set it against the first bar of the funnel — every key there is — to see how
             little of the key space a good attack needs to visit.

@@ -33,7 +33,7 @@ public static class CipherRegistry
             string[] parts = Parts(k, 2);
             return new VigenereCipher(parts[0], parts[1]);
         }),
-        new("Beaufort", "a keyword", "FORTIFICATION", k => new BeaufortCipher(k)),
+        new("Beaufort", "a keyword", "ADMIRAL", k => new BeaufortCipher(k)),
         new("Autokey", "a primer keyword", "QUEEN", k => new AutokeyCipher(k)),
         new("One-time pad", "pad letters at least as long as the message", "XMCKLQPZTRBWVNAEFJHUGYDSOI", k => new OneTimePad(k)),
         new("Rail fence", "number of rails", "3", k => new RailFenceCipher(Numbers(k, 1)[0])),

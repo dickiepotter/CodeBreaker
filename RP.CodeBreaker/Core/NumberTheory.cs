@@ -179,76 +179,100 @@ public static class NumberTheory
     }
 
     /// <summary>
-    /// The inverse of a square matrix modulo m (by Gauss–Jordan elimination, using modular inverses
-    /// in place of division). Null if the matrix has no inverse — its determinant shares a factor
-    /// with m.
+    /// The inverse of a square matrix modulo m, or null if it has none. A matrix is invertible modulo m
+    /// exactly when its determinant shares no factor with m, and the inverse is then the adjugate (the
+    /// transposed matrix of cofactors) times the determinant's inverse.
     /// </summary>
+    /// <remarks>
+    /// Why not Gauss–Jordan elimination, as with ordinary numbers? Elimination divides by a pivot, and
+    /// modulo 26 most numbers can't be divided by: 13 and every even number have no inverse. A matrix
+    /// such as [[13, 7], [14, 19]] has determinant 19, which does have an inverse, so the matrix is
+    /// invertible — yet neither entry of its first column can serve as a pivot, and elimination wrongly
+    /// gives up. Working through the determinant avoids dividing by anything but the determinant itself.
+    /// (The matrices here are 2 × 2 or 3 × 3, so cofactor expansion is quick.)
+    /// </remarks>
     public static int[,]? MatrixInverse(int[,] matrix, int m)
     {
         int n = matrix.GetLength(0);
-        var a = new int[n, 2 * n];
+        var a = new int[n, n];
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
                 a[i, j] = Letters.Mod(matrix[i, j], m);
             }
-
-            a[i, n + i] = 1;
         }
 
-        for (int col = 0; col < n; col++)
+        int? detInverse = ModInverse(Determinant(a, m), m);
+        if (detInverse is null)
         {
-            int pivot = -1;
-            for (int row = col; row < n; row++)
-            {
-                if (ModInverse(a[row, col], m) is not null)
-                {
-                    pivot = row;
-                    break;
-                }
-            }
-
-            if (pivot < 0)
-            {
-                return null;
-            }
-
-            for (int j = 0; j < 2 * n; j++)
-            {
-                (a[col, j], a[pivot, j]) = (a[pivot, j], a[col, j]);
-            }
-
-            int inv = ModInverse(a[col, col], m)!.Value;
-            for (int j = 0; j < 2 * n; j++)
-            {
-                a[col, j] = Letters.Mod(a[col, j] * inv, m);
-            }
-
-            for (int row = 0; row < n; row++)
-            {
-                if (row == col || a[row, col] == 0)
-                {
-                    continue;
-                }
-
-                int factor = a[row, col];
-                for (int j = 0; j < 2 * n; j++)
-                {
-                    a[row, j] = Letters.Mod(a[row, j] - (factor * a[col, j]), m);
-                }
-            }
+            return null;
         }
 
         var result = new int[n, n];
+        if (n == 1)
+        {
+            result[0, 0] = detInverse.Value;
+            return result;
+        }
+
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < n; j++)
             {
-                result[i, j] = a[i, n + j];
+                // inverse[i, j] = cofactor[j, i] / det
+                int cofactor = Determinant(Minor(a, j, i), m) * (((i + j) % 2 == 0) ? 1 : -1);
+                result[i, j] = Letters.Mod(cofactor * detInverse.Value, m);
             }
         }
 
         return result;
+    }
+
+    /// <summary>The determinant of a square matrix modulo m, by cofactor expansion along the first row.</summary>
+    public static int Determinant(int[,] matrix, int m)
+    {
+        int n = matrix.GetLength(0);
+        if (n == 1)
+        {
+            return Letters.Mod(matrix[0, 0], m);
+        }
+
+        long sum = 0;
+        for (int j = 0; j < n; j++)
+        {
+            long term = (long)matrix[0, j] * Determinant(Minor(matrix, 0, j), m);
+            sum += (j % 2 == 0) ? term : -term;
+        }
+
+        return (int)(((sum % m) + m) % m);
+    }
+
+    /// <summary>The matrix without row r and column c.</summary>
+    private static int[,] Minor(int[,] matrix, int r, int c)
+    {
+        int n = matrix.GetLength(0);
+        var minor = new int[n - 1, n - 1];
+        for (int i = 0, mi = 0; i < n; i++)
+        {
+            if (i == r)
+            {
+                continue;
+            }
+
+            for (int j = 0, mj = 0; j < n; j++)
+            {
+                if (j == c)
+                {
+                    continue;
+                }
+
+                minor[mi, mj++] = matrix[i, j];
+            }
+
+            mi++;
+        }
+
+        return minor;
     }
 }

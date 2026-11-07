@@ -16,6 +16,12 @@ build) or behind ASP.NET at native speed (`RP.CodeBreaker.Showcase`, local). Dep
 - **Difficulty is the theme.** Every attack returns a `Difficulty` funnel (`KeySpace` → each insight →
   remaining work). A new attack must record its reductions with honest numbers, and a new cipher needs a
   `KeySpace` and an entry in `CipherCatalogue`.
+- **Answers are checked, never just trusted.** `BreakCheck` judges every result (cribs present, readable,
+  message long enough) and the Break page shows its verdict. A new attack needs a rough reliable length
+  in `BreakCheck.ReliableLength`, keyed by its `CipherName`. When an attack gets something wrong, add a
+  test that reproduces it (see `BreakCheckTests`) before fixing it.
+- **The site explains itself.** Every page has a `Guide` ("How to use this page") and `Explain` notes on
+  its panels; the README's "Finding your way around the site" mirrors them. Change one, change the other.
 - **Ciphers are immutable objects built from their key** and implement `ICipher`; codes implement
   `ICode`. Register new ones in `CipherRegistry` / `CodeCatalogue` so the site's converter picks them up.
 - **The showcase talks only through `ShowcaseApi`** (JSON built with `JsonNode`, no reflection, so the

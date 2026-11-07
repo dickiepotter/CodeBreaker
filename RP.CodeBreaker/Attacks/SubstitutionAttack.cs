@@ -30,6 +30,9 @@ namespace RP.CodeBreaker.Attacks;
 /// </remarks>
 public static class SubstitutionAttack
 {
+    /// <summary>How many crib placements get the full, many-restart search (the rest are screened out).</summary>
+    private const int MaxFullSearches = 3;
+
     /// <summary>Break a substitution cipher (synchronously).</summary>
     public static BreakResult Break(string ciphertext, AttackOptions? options = null) =>
         BreakAsync(ciphertext, options).AsTask().GetAwaiter().GetResult();
@@ -69,7 +72,32 @@ public static class SubstitutionAttack
         int[]? bestKey = null;
         double bestScore = double.NegativeInfinity;
         long tried = 0;
+
+        // A short message gives the climb little to go on, so it gets stuck more often; climbs on short
+        // text are cheap, so give it more of them.
         int restarts = Math.Max(1, options.Restarts);
+        if (cipher.Length < 150)
+        {
+            restarts = Math.Max(restarts, 12);
+        }
+
+        // A crib with no repeated letters (DAWN) fits almost anywhere. Screen every placement with one
+        // quick climb and spend the full search on the most promising few.
+        if (constraintSets.Count > MaxFullSearches)
+        {
+            var screened = new List<(int[] Constraint, double Score)>();
+            foreach (int[] constraint in constraintSets)
+            {
+                (_, double score, long evaluations) = Climb(cipher, FrequencyStart(ciphertext, language, constraint), constraint, language);
+                tried += evaluations;
+                screened.Add((constraint, score));
+                await options.PauseAsync().ConfigureAwait(true);
+            }
+
+            constraintSets = screened.OrderByDescending(s => s.Score).Take(MaxFullSearches).Select(s => s.Constraint).ToList();
+            log.Add($"Screened {screened.Count} crib placements with one quick climb each; searching the best {constraintSets.Count} in full.");
+        }
+
         int totalRuns = restarts * constraintSets.Count;
         int run = 0;
         foreach (int[] constraint in constraintSets)
@@ -218,7 +246,7 @@ public static class SubstitutionAttack
     /// </summary>
     private static List<int[]> PlaceCribs(string ciphertext, IReadOnlyList<string> cribs, List<string> log)
     {
-        const int MaxSets = 6;
+        const int MaxSets = 400;
         var sets = new List<int[]> { };
         if (cribs.Count == 0)
         {

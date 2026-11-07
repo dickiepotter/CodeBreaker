@@ -22,7 +22,10 @@
 
   let cipherIndex = $state(0);
   let cipherKey = $state(ciphers[0].exampleKey);
-  let cipherPlain = $state('Attack at dawn. The enemy is weakest just before first light.');
+  let cipherPlain = $state(
+    'Attack at dawn. The enemy is weakest just before first light, when the sentries are tired and the fog still lies ' +
+      'in the valley. Bring the guns up the river road and wait for the signal from the church tower.',
+  );
   let cipherText = $state('');
   let cipherError = $state(null);
   let keySpace = $state(null); // { text, bits }

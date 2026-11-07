@@ -110,11 +110,24 @@ public static class HillAttack
                 return Result(best.Cipher, ciphertext, best.Score, tried, watch, difficulty, log, language);
             }
 
-            log.Add($"Crib {crib} gave no consistent key at any position.");
+            log.Add($"Crib {crib} gave no key by algebra at any position (its letter pairs never make an invertible matrix).");
+        }
+
+        int[] c = Letters.ToNumbers(text);
+
+        // A crib whose pairs can't be inverted still pins down each row on its own: row 1 must turn every
+        // ciphertext pair under the crib into the crib's first letter of that pair, row 2 into the second.
+        if (CribRows(c, options, language, ref tried) is { } viaRows)
+        {
+            log.Add($"Crib {viaRows.Crib} at position {viaRows.At}: only {viaRows.Row1} × {viaRows.Row2} matrix rows agree with it; decryption matrix {HillCipher.FormatMatrix(viaRows.D)}.");
+            difficulty.Then("Each row of the decryption matrix is independent", 2 * 676, "Row 1 makes the first letter of every pair, row 2 the second: search them separately.");
+            difficulty.Then($"Crib {viaRows.Crib} must appear", viaRows.Surviving, "Only rows that turn the ciphertext under the crib into the crib's letters survive, at each place the crib could sit.");
+            difficulty.Then("Pick the most English", 1, "The decryption that reads best.");
+            var key = new HillCipher(NumberTheory.MatrixInverse(viaRows.D, 26)!);
+            return Result(key, ciphertext, viaRows.Score, tried, watch, difficulty, log, language);
         }
 
         // Ciphertext only: score each candidate row of the decryption matrix by letter frequencies.
-        int[] c = Letters.ToNumbers(text);
         var rowScores = new List<(int A, int B, double Chi)>();
         var counts = new int[26];
         for (int a = 0; a < 26; a++)
@@ -161,6 +174,95 @@ public static class HillAttack
         var keyFound = new HillCipher(NumberTheory.MatrixInverse(bestD!.Value.D, 26)!);
         log.Add($"Decryption matrix {HillCipher.FormatMatrix(bestD.Value.D)}, so the key is {keyFound.KeyDescription}.");
         return Result(keyFound, ciphertext, bestD.Value.Score, tried, watch, difficulty, log, language);
+    }
+
+    /// <summary>
+    /// The crib, row by row: at each place the crib could sit, keep the rows of the decryption matrix
+    /// that produce the crib's letters from the ciphertext under it, pair the survivors, and keep the
+    /// most English decryption that contains every crib. Null if no placement leaves a valid key.
+    /// </summary>
+    private static (int[,] D, double Score, string Crib, int At, int Row1, int Row2, long Surviving)? CribRows(int[] c, AttackOptions options, LanguageModel language, ref long tried)
+    {
+        (int[,] D, double Score, string Crib, int At, int Row1, int Row2, long Surviving)? best = null;
+        long surviving = 0;
+        foreach (string crib in options.NormalisedCribs.Where(k => k.Length >= 4))
+        {
+            int[] p = Letters.ToNumbers(crib);
+            for (int at = 0; at + crib.Length <= c.Length; at++)
+            {
+                // The whole pairs (starting at even positions) that lie under the crib.
+                int first = at + (at % 2);
+                var blocks = new List<int>();
+                for (int s = first; s + 1 < at + crib.Length; s += 2)
+                {
+                    blocks.Add(s);
+                }
+
+                if (blocks.Count < 2)
+                {
+                    continue;
+                }
+
+                List<(int A, int B)> row1 = Rows(c, blocks, s => p[s - at]);
+                List<(int A, int B)> row2 = Rows(c, blocks, s => p[s + 1 - at]);
+                tried += 2 * 676;
+                foreach (var r1 in row1)
+                {
+                    foreach (var r2 in row2)
+                    {
+                        var d = new int[,] { { r1.A, r1.B }, { r2.A, r2.B } };
+                        if (!HillCipher.IsValidKey(d))
+                        {
+                            continue;
+                        }
+
+                        tried++;
+                        surviving++;
+                        string plain = HillCipher.Multiply(d, c);
+                        if (!options.ContainsAllCribs(plain))
+                        {
+                            continue;
+                        }
+
+                        double score = language.QuadgramScore(plain);
+                        if (best is null || score > best.Value.Score)
+                        {
+                            best = (d, score, crib, at, row1.Count, row2.Count, 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        return best is null ? null : best.Value with { Surviving = Math.Max(1, surviving) };
+    }
+
+    /// <summary>The rows (a, b) with a·c[s] + b·c[s+1] ≡ want(s) for every block start s.</summary>
+    private static List<(int A, int B)> Rows(int[] c, List<int> blocks, Func<int, int> want)
+    {
+        var rows = new List<(int A, int B)>();
+        for (int a = 0; a < 26; a++)
+        {
+            for (int b = 0; b < 26; b++)
+            {
+                bool ok = true;
+                foreach (int s in blocks)
+                {
+                    if (((a * c[s]) + (b * c[s + 1])) % 26 != want(s))
+                    {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (ok)
+                {
+                    rows.Add((a, b));
+                }
+            }
+        }
+
+        return rows;
     }
 
     private static BreakResult Result(HillCipher cipher, string ciphertext, double score, long tried, Stopwatch watch, Difficulty difficulty, List<string> log, LanguageModel language)
