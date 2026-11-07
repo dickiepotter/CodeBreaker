@@ -7,6 +7,8 @@
   import AttackerSelect from '../lib/AttackerSelect.svelte';
   import Funnel from '../lib/Funnel.svelte';
   import Progress from '../lib/Progress.svelte';
+  import Guide from '../lib/Guide.svelte';
+  import Explain from '../lib/Explain.svelte';
 
   const weather = shared.meta.cases.find((c) => c.cipher === 'Enigma');
   const army = ['I', 'II', 'III', 'IV', 'V'];
@@ -149,6 +151,26 @@
   </p>
 </header>
 
+<Guide id="enigma">
+  <p>The page has two halves: on the left, an Enigma machine to play with; on the right, the bombe that broke it.</p>
+  <ol>
+    <li><b>Play with the machine.</b> Type in the box and the <i>Lamps</i> show what an operator would have written down.
+      Change any setting and the whole output changes. Copy the lamps into the box with the same settings and you get your
+      message back: Enigma decrypts by encrypting again.</li>
+    <li><b>Load the WETTERBERICHT case</b> on the right (it's loaded already). It is a German weather report — and every
+      weather report began with the word WETTERBERICHT. That word is the <b>crib</b>.</li>
+    <li><b>Choose where the crib sits.</b> The ciphertext below the crib box has the possible starting places highlighted;
+      the rest are ruled out because Enigma never turned a letter into itself. Click one (the first is chosen for you).</li>
+    <li><b>Look at the menu</b>, the circle diagram. Loops in it are what make the bombe work: more loops, fewer false
+      alarms.</li>
+    <li>Press <b>Run the bombe</b>. It tests every rotor order and position, recovers the plugboard, and decrypts the
+      message. The funnel underneath shows how the crib cut 77 bits of key down to the 17 to 20 bits of rotor
+      orders and positions.</li>
+  </ol>
+  <p class="look">To make it harder, press <i>Use the machine's output</i> to bring over your own message from the left, put
+    in a word you know is in it, and set the language to English.</p>
+</Guide>
+
 <div class="workspace even">
   <section class="panel">
     <h3>The machine</h3>
@@ -167,12 +189,13 @@
       </label>
     </div>
     <div class="row">
-      <label class="field"><span>Rings</span><input type="text" maxlength="3" bind:value={rings} /></label>
-      <label class="field"><span>Start position</span><input type="text" maxlength="3" bind:value={start} /></label>
+      <label class="field"><span>Rings</span><input type="text" maxlength="3" bind:value={rings} /><small>fixed for the day, one letter per rotor</small></label>
+      <label class="field"><span>Start position</span><input type="text" maxlength="3" bind:value={start} /><small>the letters in the windows, chosen per message</small></label>
     </div>
     <label class="field">
       <span>Plugboard (pairs)</span>
       <input type="text" bind:value={plugs} placeholder="e.g. AB CD EF" />
+      <small>each pair swaps two letters on the way in and on the way out; the army used ten pairs</small>
     </label>
     <label class="field">
       <span>Type here (Enigma is its own inverse: type the ciphertext with the same settings to decrypt)</span>
@@ -198,6 +221,28 @@
       Try rotors I II III, start ADU, and type a few letters: the windows go ADV, AEW, BFX — the middle rotor moves twice in a
       row and takes the left one with it. Notice too that no letter ever lights itself.
     </p>
+    <Explain title="How does the machine work?">
+      <p>
+        Pressing a key sends current through the <b>plugboard</b> (which may swap the letter for its partner), then through
+        three <b>rotors</b> — each a wired disc that scrambles the alphabet — into the <b>reflector</b>, which sends it back
+        through the rotors by a different route and out through the plugboard again to light a lamp.
+      </p>
+      <p>
+        Before the current flows, the right-hand rotor turns one step, so the next letter is scrambled differently. When it
+        passes its <b>notch</b>, it turns the middle rotor too, like a car's odometer. That is why the same letter typed
+        twice gives two different lamps: Enigma is a different substitution for every letter, for 16,900 letters before it
+        repeats.
+      </p>
+      <p>
+        The <b>reflector</b> makes the machine its own inverse (handy: the same settings decrypt) but also means a letter can
+        never become itself — the flaw the bombe exploits. The <b>rings</b> shift a rotor's wiring relative to its letters
+        and turnover point.
+      </p>
+      <p>
+        The key space: 60 ways to choose and order three rotors from five, 17,576 start positions, 676 ring settings
+        (only two matter), and about 1.5 × 10<sup>14</sup> ways to place ten plugs. The plugboard is almost all of it.
+      </p>
+    </Explain>
   </section>
 
   <section class="panel">
@@ -230,6 +275,7 @@
           {/if}
         {/each}
       </div>
+      <small>Highlighted letters are possible starting places; gold is the chosen one, with the crib laid over it.</small>
     </div>
 
     {#if menu && graph}
@@ -251,6 +297,21 @@
             and positions to get three or more.
           </p>
         {/if}
+        <Explain title="What is the menu?">
+          <p>
+            Lay the crib against the ciphertext and you get pairs of letters: at this position W became that letter, at the
+            next E became another, and so on. Each pair is one line in the diagram, joining a crib letter to the cipher
+            letter it became, and labelled with its position in the crib.
+          </p>
+          <p>
+            The bombe guesses one plug for the gold <b>test letter</b> ("suppose it is plugged to A"). Following the lines,
+            the Enigma at each position tells it what the next letter must be plugged to, and the next. Round a <b>loop</b>
+            the chain comes back to where it started — and with a wrong guess, it comes back to a different letter: a
+            contradiction. A wrong rotor position contradicts itself almost at once, so the machine moves on; a position
+            where nothing contradicts is a <b>stop</b>, worth checking by hand.
+          </p>
+          <p>That is how the plugboard's 10<sup>14</sup> possibilities vanish from the search: they are never tried, only deduced.</p>
+        </Explain>
       </div>
     {/if}
 
@@ -271,6 +332,7 @@
     <label class="field">
       <span>Language of the traffic</span>
       <select bind:value={language}><option>English</option><option>German</option></select>
+      <small>used to judge whether a stop's decryption reads; German for the weather report</small>
     </label>
     <div class="buttons">
       <button class="primary" onclick={runBombe} disabled={runner.busy || cribPosition === null || orders === 0}>Run the bombe</button>
@@ -294,10 +356,15 @@
         </div>
       {/if}
       <h3>Stops ({bombe.stopCount})</h3>
+      <p class="note">
+        Positions where no contradiction appeared. Most are false alarms; each was checked by completing the plugboard and
+        seeing whether the message then reads. At Bletchley this check was done by hand, on a replica Enigma.
+      </p>
       <ol class="log">
         {#each bombe.stops.slice(0, 20) as stop}<li>{stop}</li>{/each}
       </ol>
       <h3>Working</h3>
+      <p class="note">The bombe's notes, step by step.</p>
       <ol class="log">
         {#each bombe.log as line}<li>{line}</li>{/each}
       </ol>

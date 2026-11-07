@@ -1,8 +1,16 @@
 <script>
   // Codes and ciphers, both ways: every code and every cipher in the library, converted through the API.
   import { ask } from '../lib/api.js';
-  import { shared } from '../lib/state.svelte.js';
+  import { shared, navigate } from '../lib/state.svelte.js';
   import { bits } from '../lib/format.js';
+  import Guide from '../lib/Guide.svelte';
+  import Explain from '../lib/Explain.svelte';
+
+  /** Take the ciphertext to another page ("Analyse this →"). */
+  function handTo(page) {
+    shared.handoff = cipherText;
+    navigate(page);
+  }
 
   const codes = shared.meta.codes;
   const ciphers = shared.meta.ciphers;
@@ -158,6 +166,23 @@
   </p>
 </header>
 
+<Guide id="convert">
+  <ol>
+    <li><b>Pick a cipher</b> on the right. The line under <i>Key</i> says what kind of key it takes — a number, a word, a
+      shuffled alphabet — and <b>Random key</b> makes a sensible one for you.</li>
+    <li><b>Type a message</b> in <i>Plaintext</i> and press <b>Encrypt ↓</b>. The scrambled result appears in
+      <i>Ciphertext</i>.</li>
+    <li>Edit the ciphertext, or paste someone else's, and press <b>↑ Decrypt</b> to go back the other way with the same
+      key.</li>
+    <li>Watch the green box: <b>how many keys could it have been?</b> That is what an attacker who doesn't know your key
+      faces if all they can do is try every key. Try Caesar, then Simple substitution, then Enigma.</li>
+    <li>Then press <b>Analyse this ciphertext →</b> or <b>Try to break it →</b> to see how a code breaker gets in anyway —
+      usually far faster than that number suggests.</li>
+  </ol>
+  <p class="look">The left-hand panel does the same for <b>codes</b>, which have no key at all. If you want to break your
+    message afterwards, make it a few sentences long: the statistics need text to count.</p>
+</Guide>
+
 <div class="workspace even">
   <section class="panel">
     <h3>Codes</h3>
@@ -178,6 +203,7 @@
       <button class="primary" onclick={() => convertCode('encode')}>Encode ↓</button>
       <button onclick={() => convertCode('decode')}>↑ Decode</button>
     </div>
+    <p class="note">Encode turns the top box into the bottom one; Decode goes back up.</p>
     <label class="field">
       <span>Coded</span>
       <textarea bind:value={codeCoded}></textarea>
@@ -193,6 +219,17 @@
         </div>
       </div>
     {/if}
+    <Explain title="Why isn't a code secure?">
+      <p>
+        A code has no key: anyone with the table can read it, and the Morse, ASCII and Base64 tables are public. They exist
+        to <b>carry</b> a message — over a telegraph wire, a radio, a computer — not to hide it.
+      </p>
+      <p>
+        A <b>codebook</b> is the exception: a secret table of phrases. It is as safe as the book is secret, and it is broken
+        the way a language is learned — by collecting messages and what they turned out to mean until the groups are
+        known. The Zimmermann telegram on the Famous cases page was read that way.
+      </p>
+    </Explain>
   </section>
 
   <section class="panel">
@@ -208,7 +245,7 @@
     <label class="field">
       <span>Key</span>
       <input type="text" bind:value={cipherKey} />
-      <small>{definition.keyFormat}</small>
+      <small>Key format: {definition.keyFormat}</small>
     </label>
     <label class="field">
       <span>Plaintext</span>
@@ -226,12 +263,30 @@
     {#if cipherError}
       <div class="error">{cipherError}</div>
     {/if}
+    {#if cipherText && !cipherError}
+      <div class="buttons">
+        <button onclick={() => handTo('analyse')}>Analyse this ciphertext →</button>
+        <button onclick={() => handTo('break')}>Try to break it →</button>
+      </div>
+    {/if}
     {#if keySpace}
       <div class="result">
         <span class="result__label">How many keys could it have been?</span>
         <div class="result__num">{bits(keySpace.bits)}</div>
         <div class="result__sub">{keySpace.text}. Brute force on a laptop: {laptopTime(keySpace.bits)}.</div>
       </div>
+      <Explain title="What does this number mean?">
+        <p>
+          It is the <b>key space</b>: how many different keys this cipher could have been set up with. "Bits" is a compact
+          way to write it — <i>n</i> bits means 2<sup><i>n</i></sup> keys, so each extra bit doubles it.
+        </p>
+        <p>
+          The laptop time assumes the dumbest attack: try every key, ten million a second. It is an <b>upper limit</b>, not
+          the real difficulty. A simple substitution has about 88 bits of keys — billions of years by brute force — yet the
+          Break page cracks one in seconds, because a code breaker can find the key a letter at a time. The Difficulty
+          ladder page shows that gap for every cipher.
+        </p>
+      </Explain>
     {/if}
     <p class="note">
       Letter-for-letter ciphers (Caesar, Vigenère, substitution…) keep your spaces and punctuation; the others work on the

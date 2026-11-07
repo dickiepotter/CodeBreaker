@@ -2,6 +2,7 @@
   // Two thousand years of codes made and broken, each with a message to work on.
   import { ask } from '../lib/api.js';
   import { shared, navigate } from '../lib/state.svelte.js';
+  import Guide from '../lib/Guide.svelte';
 
   const cases = shared.meta.cases;
 
@@ -62,6 +63,19 @@
   </p>
 </header>
 
+<Guide id="famous">
+  <p>Each card is one episode, oldest first. On each card:</p>
+  <ul>
+    <li>the <b>story</b> — who sent it, who broke it, and what was at stake;</li>
+    <li>the <b>ciphertext</b> in gold — a <span class="badge" style="margin:0">historical ciphertext</span> badge means it is the
+      real one, otherwise it is new text enciphered the same way;</li>
+    <li>the <b>cribs</b> the situation would have given a code breaker, and <b>how it breaks</b> in one or two sentences;</li>
+    <li>a button: <b>Break it →</b> takes the message to the Break page with the right attack and cribs filled in;
+      <b>Run the bombe →</b> goes to the Enigma page; <b>Drag a crib</b> opens a small experiment on the card itself; and
+      <b>Decode with the known key</b> is for cases this site has no automatic attack for — itself a lesson.</li>
+  </ul>
+</Guide>
+
 <div class="cards">
   {#each cases as c, i}
     <article class="card">
@@ -113,8 +127,11 @@
               </tbody>
             </table>
             <p class="note">
-              c₁ − c₂ = p₁ − p₂: the pad has cancelled. Where your guess is right, message two reads as English. Try THE, then
-              extend: THESOURCE, MEETTHE, COURIER…
+              Two messages were sent with the same one-time pad, which must never happen. Subtract one ciphertext from the
+              other and the pad cancels out, leaving the two plaintexts mixed together (c₁ − c₂ = p₁ − p₂). Now guess a word
+              in message one and slide it along: at each position, the table shows what message two would have to say
+              there. Where your guess is right, message two reads as English (a higher <i>Reads?</i> score). Try THE, then
+              longer guesses: THESOURCE, MEETTHE, COURIER…
             </p>
           {/if}
         </div>

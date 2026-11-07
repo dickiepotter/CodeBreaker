@@ -224,3 +224,40 @@ td.n { font-family: 'Cascadia Code', monospace; }
         color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
     }
 }
+
+/* ---- explanations: the page guide, "what am I looking at?" notes, the glossary and the tour ---- */
+.guide {
+    border: 1px solid #2d5e4d; border-radius: 12px; background: #13261f;
+    padding: .2rem 1rem; margin: 0 0 1.25rem; max-width: 100%;
+}
+.guide summary { cursor: pointer; padding: .55rem 0; font-weight: 600; color: var(--accent); }
+.guide__body { padding: 0 0 .8rem; color: var(--text); font-size: .9rem; line-height: 1.6; }
+.guide__body ol, .guide__body ul { margin: .2rem 0 .5rem; padding-left: 1.3rem; }
+.guide__body li { margin: .25rem 0; }
+.guide__body p { margin: .4rem 0; }
+.guide__body .look { color: var(--muted); }
+
+.explain { border-top: 1px dashed var(--line); padding-top: .35rem; }
+.explain summary { cursor: pointer; font-size: .8rem; color: var(--accent); padding: .15rem 0; }
+.explain summary::marker { color: var(--muted); }
+.explain__body { color: var(--muted); font-size: .84rem; line-height: 1.55; padding: .3rem 0 .2rem; }
+.explain__body p { margin: .35rem 0; }
+.explain__body ul, .explain__body ol { margin: .3rem 0; padding-left: 1.2rem; }
+.explain__body b { color: var(--text); font-weight: 600; }
+
+.glossary { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem 1.25rem; margin: 0; }
+.glossary div { min-width: 0; }
+.glossary dt { font-weight: 600; color: var(--gold); font-size: .88rem; }
+.glossary dd { margin: .1rem 0 .4rem; color: var(--muted); font-size: .84rem; line-height: 1.5; }
+
+.tour { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .6rem; margin: 0; padding: 0; list-style: none; counter-reset: tour; }
+.tour li { counter-increment: tour; min-width: 0; }
+.tour a {
+    display: block; height: 100%; text-decoration: none; color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); padding: .6rem .75rem;
+}
+.tour a:hover { border-color: var(--accent); }
+.tour a b::before { content: counter(tour) '. '; color: var(--accent); }
+.tour a span { display: block; color: var(--muted); font-size: .8rem; line-height: 1.45; margin-top: .2rem; }
+
+.next { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: .5rem; flex-wrap: wrap; }

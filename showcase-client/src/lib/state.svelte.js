@@ -19,8 +19,18 @@ export function navigate(path, query = {}) {
   location.hash = `#/${path}${q ? `?${q}` : ''}`;
 }
 
-/** Everything the pages share. `attacker` is an index into meta.attackers (2 = a laptop). */
-export const shared = $state({ meta: null, error: null, attacker: 2 });
+/**
+ * Everything the pages share. `attacker` is an index into meta.attackers (2 = a laptop). `handoff` is a
+ * ciphertext one page passes to the next ("Analyse this →"), taken (and cleared) by the page that opens.
+ */
+export const shared = $state({ meta: null, error: null, attacker: 2, handoff: null });
+
+/** Take the ciphertext another page handed over, if any. */
+export function takeHandoff() {
+  const text = shared.handoff;
+  shared.handoff = null;
+  return text;
+}
 
 export const metaLoaded = ask('meta')
   .then((m) => (shared.meta = m))

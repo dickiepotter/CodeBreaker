@@ -4,6 +4,8 @@
   import { shared } from '../lib/state.svelte.js';
   import { bits, colour, verdict } from '../lib/format.js';
   import AttackerSelect from '../lib/AttackerSelect.svelte';
+  import Guide from '../lib/Guide.svelte';
+  import Explain from '../lib/Explain.svelte';
 
   const LabelWidth = 250;
   const RowHeight = 24;
@@ -35,6 +37,25 @@
     explains how every number here is derived.
   </p>
 </header>
+
+<Guide id="home" title="New here? Start here">
+  <p>
+    This site is a hands-on companion to the <a href="https://github.com/dickiepotter/CodeBreaker#readme" target="_blank" rel="noopener">tutorial</a>.
+    Each page along the top does one job. If you have ten minutes, take them in this order:
+  </p>
+  <ol class="tour">
+    <li><a href="#/convert"><b>Convert</b><span>Encrypt a sentence of your own with a cipher, and see how many keys it could have used.</span></a></li>
+    <li><a href="#/analyse"><b>Analyse</b><span>Look at a ciphertext the way a code breaker does first: count letters and spot patterns, before knowing any key.</span></a></li>
+    <li><a href="#/break"><b>Break</b><span>Run a real attack, and watch the number of keys left to try shrink at each step.</span></a></li>
+    <li><a href="#/enigma"><b>Enigma &amp; bombe</b><span>Type on a simulated Enigma, then recover its settings from one guessed word, as Bletchley Park did.</span></a></li>
+    <li><a href="#/famous"><b>Famous cases</b><span>Mary, Queen of Scots; the Zimmermann telegram; VENONA; Kryptos — each with a message to break.</span></a></li>
+    <li><a href="#/modern"><b>Modern</b><span>Why today's ciphers don't fall like this — and why a weak password still does.</span></a></li>
+  </ol>
+  <p>
+    On every page a green box like this one explains how to use it, and the <span style="color:var(--accent)">▸ What am I
+    looking at?</span> links inside the panels explain each chart and number. Close this box and it stays closed.
+  </p>
+</Guide>
 
 <div class="panel">
   <div class="row">
@@ -77,10 +98,37 @@
       <span><i style="background:{colour(f)}"></i>best attack: {verdict(f)}</span>
     {/each}
   </div>
+
+  <Explain title="How do I read this chart?">
+    <p>One row per cipher, oldest and easiest at the top. Read it left to right: further right means more work.</p>
+    <ul>
+      <li>
+        <b>The scale is in bits.</b> A key space of <i>n</i> bits means 2<sup><i>n</i></sup> keys, so each step of one bit
+        to the right <b>doubles</b> the work; ten bits is a thousand times more; 77 bits (Enigma) is about 10<sup>23</sup>.
+        Bits let a ruler hold both Caesar's 25 keys and AES's 10<sup>38</sup>.
+      </li>
+      <li><b>The grey bar</b> is how many keys the cipher could have been set up with — the work of trying them all.</li>
+      <li>
+        <b>The coloured bar</b> is the work the best known attack really needs. Its colour is the verdict for the searcher
+        you picked: green means while you wait, red means a lifetime, purple means never.
+      </li>
+      <li>
+        <b>The gold dashed line</b> is how much one searcher can do in five minutes. Change "Who is searching?" and watch
+        it slide: a person with pencil and paper is far to the left, the whole Bitcoin network far to the right.
+      </li>
+    </ul>
+    <p>
+      The gap between the grey and the coloured bar is the point of the whole site: it is what cleverness — and a
+      guessed word — buys you.
+    </p>
+  </Explain>
 </div>
 
 <h2>The ladder in numbers</h2>
 <div class="panel">
+  <p class="desc" style="margin-bottom:.6rem">
+    The same ciphers in figures. Times are for the searcher chosen above; change it and they all update.
+  </p>
   <table class="ladder">
     <thead>
       <tr>
@@ -109,6 +157,17 @@
       {/each}
     </tbody>
   </table>
+  <Explain title="What do the columns mean?">
+    <ul>
+      <li><b>Key space</b> — how many keys there are, in bits (each extra bit doubles it).</li>
+      <li><b>Brute force</b> — how long it takes to try every key, one at a time, for the chosen searcher.</li>
+      <li>
+        <b>Best attack</b> — the cleverest method known, how much work it needs (again in bits), and in one sentence why it
+        needs so much less than brute force.
+      </li>
+      <li><b>Time, best attack</b> — how long that takes, coloured by the verdict: green is "while you wait".</li>
+    </ul>
+  </Explain>
 </div>
 
 <h2>Reading the ladder</h2>
@@ -132,4 +191,24 @@
       to be in the message), the bombe's deductions strip out the plugboard and leave about a million rotor positions.
     </p>
   </div>
+</div>
+
+<h2>The words used on this site</h2>
+<div class="panel">
+  <dl class="glossary">
+    <div><dt>Plaintext / ciphertext</dt><dd>The message before and after encryption.</dd></div>
+    <div><dt>Code</dt><dd>Swaps whole words or symbols using a fixed table (Morse, a codebook). There is no key; the table is the secret, if anything is.</dd></div>
+    <div><dt>Cipher</dt><dd>Changes the message letter by letter with a rule and a secret <b>key</b>. Knowing the rule is no help without the key.</dd></div>
+    <div><dt>Key space</dt><dd>Every key the cipher could have been set up with. Caesar has 25; a simple substitution has 26! ≈ 4 × 10<sup>26</sup>.</dd></div>
+    <div><dt>Bits</dt><dd>A way to write huge numbers: <i>n</i> bits means 2<sup><i>n</i></sup>. 10 bits ≈ a thousand, 20 ≈ a million, 40 ≈ a trillion. One more bit doubles the work.</dd></div>
+    <div><dt>Brute force</dt><dd>Trying every key, one after another, until the text reads. Always works, given time — often more time than the universe has.</dd></div>
+    <div><dt>Crib</dt><dd>A word you are confident is in the message: the sender's name, "weather report", "Heil Hitler". Bletchley's word for it. It rules out most keys at a stroke.</dd></div>
+    <div><dt>Searcher</dt><dd>Who (or what) is trying keys, and how fast: a clerk with pencil and paper, a wartime bombe, a laptop, a graphics card, the Bitcoin network.</dd></div>
+    <div><dt>A few minutes</dt><dd>Five, exactly. The question on every page is whether the work left fits in five minutes for your chosen searcher.</dd></div>
+    <div><dt>Frequency analysis</dt><dd>Counting letters. In English E, T and A are common and Z rare; a cipher that keeps that unevenness gives itself away.</dd></div>
+    <div><dt>Index of coincidence</dt><dd>The chance two letters picked at random from the text are the same: 0.066 for English, 0.038 for random letters. Tells you whether a cipher used one alphabet or many.</dd></div>
+    <div><dt>Hill climbing</dt><dd>Start with a random key, change it a little, keep the change if the text reads more like English. Repeat. Works when a nearly-right key gives nearly-right text.</dd></div>
+    <div><dt>Quadgram score</dt><dd>How English a text looks, from how common its four-letter runs (TION, THER, …) are in real English. The "fitness" every hill climb here tries to raise.</dd></div>
+    <div><dt>Unicity distance</dt><dd>Roughly how many letters of ciphertext you need before only one key gives sensible text. Shorter messages can decrypt to several plausible answers.</dd></div>
+  </dl>
 </div>

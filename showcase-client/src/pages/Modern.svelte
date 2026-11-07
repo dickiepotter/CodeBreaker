@@ -4,6 +4,8 @@
   import { ask, inBrowser } from '../lib/api.js';
   import { Runner } from '../lib/Runner.svelte.js';
   import Progress from '../lib/Progress.svelte';
+  import Guide from '../lib/Guide.svelte';
+  import Explain from '../lib/Explain.svelte';
   import { bits as fmtBits, ms, thousands, verdict } from '../lib/format.js';
 
   // ---- toy RSA ----
@@ -121,6 +123,19 @@
   </p>
 </header>
 
+<Guide id="modern">
+  <p>Three small experiments, each showing where modern cryptography's strength comes from — and where it leaks.</p>
+  <ol>
+    <li><b>Toy RSA</b> (left). Make a key, then press <b>Best quick method</b> to factor it. Move the slider up a few
+      notches and try again: each step makes it markedly slower. Then try <b>Make a careless key</b> and <b>Fermat</b>, to
+      see a big key fall instantly because it was made badly.</li>
+    <li><b>A strong hash and a weak secret</b> (right). Type a PIN and press <b>Crack it from the hash</b>: SHA-256 is
+      unbreakable, but there are only 10,000 four-digit PINs. Then try a password like House7.</li>
+    <li><b>Key-space calculator</b> (bottom right). Type in any key's shape and see how long trying every key takes, for
+      everyone from a clerk to the Bitcoin network.</li>
+  </ol>
+</Guide>
+
 <div class="workspace even">
   <section class="panel">
     <h3>Toy RSA: breaking it is factoring it</h3>
@@ -150,6 +165,28 @@ e = {key.e}</div>
       </div>
     {/if}
     <Progress runner={rsaRunner} />
+    <Explain title="How does RSA work, and why is factoring the attack?">
+      <p>
+        Pick two secret primes, <b>p</b> and <b>q</b>, and multiply them to get <b>n</b>. Publish n and a number <b>e</b>:
+        that is the public key, and anyone can use it to encrypt. Decrypting needs the private number <b>d</b>, and working
+        out d needs p and q.
+      </p>
+      <p>
+        Multiplying is easy; going back — finding p and q from n — is <b>factoring</b>, and nobody knows a fast way to do
+        it. So breaking RSA is factoring n. Here the key is shown for teaching; an attacker would see only n and e.
+      </p>
+      <p>The four buttons are four ways to factor:</p>
+      <ul>
+        <li><b>Trial division</b> — divide by 2, 3, 5, 7… up to √n. Simple, and hopeless past about 40 bits.</li>
+        <li><b>Fermat</b> — instant when p and q are close together (n is then almost a perfect square), useless otherwise.</li>
+        <li><b>Pollard's rho</b> — a clever random walk that finds a factor in about the fourth root of n steps.</li>
+        <li><b>Best quick method</b> — tries the cheap ones in a sensible order.</li>
+      </ul>
+      <p>
+        Real keys are 2048 bits. The table below shows why the slider stops at 96: the work roughly doubles with every few
+        bits, and the best method known — the number field sieve — is still nowhere near enough.
+      </p>
+    </Explain>
     {#if factor}
       <div class="result">
         <span class="result__label">{factor.method}</span>
@@ -185,8 +222,9 @@ e = {key.e}</div>
         </tbody>
       </table>
       <p class="note">
-        Rough (constant factors ignored), but the shape is right: 512 bits fell in 1999; 2048 is far out of reach of any
-        classical computer.
+        Each figure is the log₂ of the number of operations, so 40 means about a trillion and every extra 10 means a
+        thousand times more. Rough (constant factors ignored), but the shape is right: 512 bits fell in 1999; 2048 is far
+        out of reach of any classical computer.
       </p>
     {/if}
   </section>
@@ -209,6 +247,18 @@ e = {key.e}</div>
         </div>
       </div>
     {/if}
+
+    <Explain title="What is a hash, and how can it be cracked?">
+      <p>
+        A <b>hash</b> like SHA-256 turns any input into a fixed-length fingerprint (the long hex string above). It can't be
+        run backwards, so websites store the hash of your password, not the password itself.
+      </p>
+      <p>
+        But anyone holding the hash can <b>guess forwards</b>: hash a candidate, compare, repeat. The hash has 2<sup>256</sup>
+        possible outputs, but if the secret is a 4-digit PIN there are only 10,000 inputs to try — and that is the number
+        that counts. The same goes for passwords: people choose from a small set of words with predictable tweaks.
+      </p>
+    </Explain>
 
     <label class="field">
       <span>A password made the way people make them (a common word, maybe a capital, maybe a number)</span>
@@ -273,6 +323,20 @@ e = {key.e}</div>
         </tbody>
       </table>
       <p class="note">Try 94 symbols × 12 (a random 12-character password), 26! (a substitution alphabet), and 128 bits (AES).</p>
+      <Explain title="What are the three kinds of key?">
+        <ul>
+          <li><b>symbols ^ length</b> — a key of so many characters, each from an alphabet: 10 digits for a PIN, 26 letters,
+            94 printable keyboard characters.</li>
+          <li><b>n! (orderings)</b> — a key that is a shuffle of n things: a substitution alphabet (26!), the column order of
+            a transposition.</li>
+          <li><b>2 ^ bits</b> — a modern key, given as its length in bits: 56 for DES, 128 or 256 for AES.</li>
+        </ul>
+        <p>
+          The <b>unicity distance</b> is roughly how many letters of English ciphertext are needed before only one key gives
+          a sensible message. With fewer, several keys may give believable answers, and no attack can tell which is right.
+        </p>
+        <p>The table assumes brute force — the only attack against a well-made modern cipher.</p>
+      </Explain>
     {/if}
   </section>
 </div>

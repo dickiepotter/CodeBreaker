@@ -1,14 +1,32 @@
 <script>
   // Break a cipher, and see how much work it took: any attack (or Auto), cribs, the language, and the
   // difficulty funnel drawn from the full key space down to the work actually done.
-  import { shared, route } from '../lib/state.svelte.js';
+  import { shared, route, takeHandoff } from '../lib/state.svelte.js';
   import { Runner } from '../lib/Runner.svelte.js';
   import { cribs as splitCribs, ms, num, thousands } from '../lib/format.js';
   import { inBrowser } from '../lib/api.js';
   import AttackerSelect from '../lib/AttackerSelect.svelte';
   import Funnel from '../lib/Funnel.svelte';
   import Progress from '../lib/Progress.svelte';
+  import Guide from '../lib/Guide.svelte';
+  import Explain from '../lib/Explain.svelte';
 
+  /** One line on how each attack works, shown under the choice. */
+  const howItWorks = {
+    Auto: 'Measures the text first (as on the Analyse page), guesses the cipher family, then runs the attack that suits it.',
+    Caesar: 'Tries all 25 shifts and keeps the one whose text reads most like the language. Pure brute force — there are so few keys.',
+    Affine: 'Tries all 312 multiplier-and-shift pairs. Still small enough for brute force.',
+    Substitution: 'Hill climbing: starts from a guess based on letter counts, swaps two letters of the key at a time, and keeps any swap that makes the text read more like the language.',
+    'Vigenère': 'Finds the key length from repeats and column statistics, then solves each column as its own Caesar cipher. A product of possibilities becomes a sum.',
+    Beaufort: 'The same as Vigenère (Beaufort subtracts instead of adds): find the period, then each column separately.',
+    Autokey: 'The message becomes the key after a short primer, so there is no period to find; it guesses the primer a letter at a time.',
+    'Rail fence': 'Tries every number of rails. Letters are only moved, never changed, so there are few keys.',
+    Columnar: 'Guesses the number of columns, then hill-climbs the column order, keeping changes that make more English four-letter runs.',
+    Playfair: 'Simulated annealing: like hill climbing, but sometimes accepts a worse 5×5 grid so it can escape dead ends. The slowest attack here.',
+    Hill: 'The Hill cipher mixes letters in pairs with a 2×2 matrix; each row of the matrix can be found on its own, so 26⁴ becomes 2 × 26².',
+    Polybius: 'Turns each pair of digits back into a letter symbol, then solves it as a substitution.',
+    XOR: 'Finds the key length from the bytes, then each key byte separately: the one that makes its column look most like text.',
+  };
   const attacks = shared.meta.attacks;
   const cases = shared.meta.cases;
 
@@ -52,6 +70,12 @@
 
   const requested = Number(route.query.get('case'));
   if (route.query.has('case') && requested >= 0 && requested < cases.length) load(requested);
+  const handed = takeHandoff();
+  if (handed) {
+    ciphertext = handed;
+    cribText = '';
+    attack = 'Auto';
+  }
 
   async function run() {
     result = null;
@@ -80,6 +104,22 @@
   </p>
 </header>
 
+<Guide id="break">
+  <ol>
+    <li><b>Choose a message.</b> One is loaded already; <i>Load a case</i> on the right offers more, or paste your own (the
+      Convert page's <i>Try to break it →</i> button brings yours here).</li>
+    <li><b>Choose an attack</b> — or leave it on <b>Auto</b> and let the statistics choose. The line under the menu says how
+      the chosen attack works.</li>
+    <li><b>Add a crib if you have one</b>: a word you're sure is in the message. It's optional, but it is often the
+      difference between minutes and seconds — and the funnel will show you exactly how much it saved.</li>
+    <li>Press <b>Break it</b>. A progress bar shows the best text so far; you can cancel at any time.</li>
+    <li><b>Read the answer, then the funnel</b> on the right. The top bar is every possible key; each bar below is one
+      thing the attack learned, and how much of the search it removed.</li>
+  </ol>
+  <p class="look">Leave <i>Restarts</i>, <i>Longest key</i> and <i>Iterations</i> alone unless an attack comes back with
+    half-readable text; then raising them gives it more tries.</p>
+</Guide>
+
 <div class="workspace">
   <div class="stack">
     <section class="panel">
@@ -93,6 +133,7 @@
           <select bind:value={attack}>
             {#each attacks as a}<option value={a}>{a}</option>{/each}
           </select>
+          <small>{howItWorks[attack] ?? ''}</small>
         </label>
         <label class="field">
           <span>Language</span>
@@ -105,12 +146,25 @@
       <label class="field">
         <span>Cribs — words you expect, comma separated (optional)</span>
         <input type="text" bind:value={cribText} placeholder="e.g. QUEEN, LETTER" />
+        <small>Context gives cribs away: a letter starts DEAR, an order ends with a name, a weather report says WEATHER.</small>
       </label>
       <div class="row">
-        <label class="field"><span>Restarts</span><input type="number" min="1" max="50" bind:value={restarts} /></label>
-        <label class="field"><span>Longest key</span><input type="number" min="2" max="30" bind:value={maxKeyLength} /></label>
-        <label class="field"><span>Iterations (Playfair)</span><input type="number" min="1000" step="10000" bind:value={iterations} /></label>
+        <label class="field"><span>Restarts</span><input type="number" min="1" max="50" bind:value={restarts} /><small>fresh random starts for a hill climb</small></label>
+        <label class="field"><span>Longest key</span><input type="number" min="2" max="30" bind:value={maxKeyLength} /><small>longest repeating key to look for</small></label>
+        <label class="field"><span>Iterations (Playfair)</span><input type="number" min="1000" step="10000" bind:value={iterations} /><small>trial grids per restart</small></label>
       </div>
+      <Explain title="What are restarts and iterations?">
+        <p>
+          The clever attacks here (substitution, columnar, Playfair) don't try every key. They <b>hill-climb</b>: start
+          from a random key, make a small change, and keep it if the text reads more like the language. Like walking uphill
+          in fog, they can end on a small hill rather than the summit — text that half reads.
+        </p>
+        <p>
+          <b>Restarts</b> begins again from new random keys and keeps the best result, so more restarts means more chances
+          of finding the summit. <b>Iterations</b> is how many small changes Playfair's search makes each time. Both cost
+          time; the defaults are usually enough.
+        </p>
+      </Explain>
       {#if attack === 'Playfair'}
         <p class="note">
           Playfair is the hardest classical cipher here: simulated annealing needs hundreds of thousands of trial grids for a
@@ -137,16 +191,27 @@
             </div>
             <div class="result__sub">{num(result.englishLikeness, 2)} per letter (text ≈ −4.4, random ≲ −6)</div>
           </div>
-          <div class="result"><span class="result__label">Keys tried</span><div class="result__num">{thousands(result.keysTried)}</div></div>
+          <div class="result"><span class="result__label">Keys tried</span><div class="result__num">{thousands(result.keysTried)}</div><div class="result__sub">compare with the funnel's first bar</div></div>
           <div class="result"><span class="result__label">Time {inBrowser ? 'here' : 'on the server'}</span><div class="result__num">{ms(result.elapsedMs)}</div></div>
         </div>
+        <Explain title="How does it know it has the answer?">
+          <p>
+            The computer can't read, so it scores text by how common its four-letter runs are in real English (or German):
+            TION and THER score well, QXZJ terribly. That score, averaged per letter, is the <b>Reads as</b> figure: about
+            −4.4 for real text, −6 or lower for gibberish.
+          </p>
+          <p>
+            "Keys tried" is the real work done. Set it against the first bar of the funnel — every key there is — to see how
+            little of the key space a good attack needs to visit.
+          </p>
+        </Explain>
         <div class="result">
           <span class="result__label">Plaintext</span>
           <div class="output">{result.plaintext}</div>
         </div>
         {#if attack !== 'XOR' && result.plaintext.length > 0}
           <div class="result">
-            <span class="result__label">With the spaces put back (most likely split into words)</span>
+            <span class="result__label">With the spaces put back (the computer's best guess at the word breaks)</span>
             <div class="desc">{result.segmented}</div>
           </div>
         {/if}
@@ -185,11 +250,13 @@
     {#if result}
       <section class="panel">
         <h3>Working</h3>
+        <p class="note">The attack's own notes, step by step: what it measured, what it guessed, what it kept.</p>
         <ol class="log">
           {#each result.log as line}<li>{line}</li>{/each}
         </ol>
         {#if result.candidates.length > 1}
           <h3>Runners-up</h3>
+          <p class="note">The next-best keys it found. When the winner is wrong, the right answer is often one of these.</p>
           <div class="tablewrap">
             <table>
               <thead><tr><th>Key</th><th>Decryption</th></tr></thead>
