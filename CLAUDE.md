@@ -32,7 +32,8 @@ build) or behind ASP.NET at native speed (`RP.CodeBreaker.Showcase`, local). Dep
 `RP.CodeBreaker/Vendored/RADD.Statistics/` holds files **vendored** from
 `C:\Source\radd_azrdevops\RADD.DesktopSuite\libs\RADD.Statistics` (see its `UPSTREAM.md` for the file
 list and the synced baseline commit). The **only** intended difference is the reversible namespace rename
-`RADD.Statistics` ⟷ `RP.CodeBreaker.Statistics`.
+`RADD.Statistics` ⟷ `RP.CodeBreaker.Statistics`. The files are © RADD Solutions Limited, published here
+with RADD Solutions' permission: **keep each file's copyright header exactly as upstream has it.**
 
 **Whenever a commit touches `RP.CodeBreaker/Vendored/RADD.Statistics/**`, or when asked to sync, run
 this two-way reconciliation, ignoring namespacing:**

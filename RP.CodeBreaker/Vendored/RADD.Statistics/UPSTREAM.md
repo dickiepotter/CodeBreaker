@@ -37,12 +37,11 @@ applied to every `*.cs` here. The RADD Solutions copyright line at the top of ea
 is upstream. **No source logic is changed on import.** Normalised by reversing the substitution, every
 file should be identical to its upstream counterpart (bar line endings and byte-order marks).
 
-## Licensing note
+## Copyright and permission
 
-Upstream is RADD Solutions Limited's code ("All rights reserved"); this repository is published under
-CPOL. Before this repository is made public, RADD Solutions must agree to release these files under the
-repository's licence — or they should be replaced. A cleaner long-term arrangement is a personal
-`RP.Statistics` upstream that both RADD.Statistics and this project vendor from (as RADD.Math vendors
-RP.Math).
+These files are RADD Solutions Limited's code. **RADD Solutions Limited has allowed them to be
+published in this repository** (November 2026). Each file keeps its original copyright header,
+`// Copyright (c) 2026 RADD Solutions Limited. …`, so their ownership stays on record; the header must be
+kept on every sync and never removed or rewritten. The rest of the repository is under CPOL.
 
 The two-way sync protocol is in the repository-root `CLAUDE.md`.

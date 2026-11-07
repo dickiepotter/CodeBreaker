@@ -1276,7 +1276,7 @@ check every cipher against published test vectors (the Enigma `BDZGO` vector and
 Playfair and Hill textbook examples, Kryptos K1), round-trip every cipher and code, and break every
 famous case.
 
-The site deploys to GitHub Pages from `.github/workflows/pages.yml` on every push to `master`: it runs the
+The site deploys to GitHub Pages from `.github/workflows/pages.yml` on every push to `main`: it runs the
 tests, publishes the WebAssembly build, builds the Svelte client in its `pages` mode (relative URLs, so it
 works under the repository's Pages path; routes live after a `#`, so deep links need no server rewrites)
 and copies the .NET runtime's `_framework` folder in beside it. One-off setup: **Settings → Pages → Build and deployment → Source: GitHub
@@ -1327,9 +1327,9 @@ commit touching the vendored files, changes upstream are brought in, changes mad
 synced commit in `UPSTREAM.md` is updated. The full protocol is in `CLAUDE.md`. New *generic* statistics
 belong upstream first; cryptography-specific code stays here.
 
-> **Licence note.** RADD.Statistics is RADD Solutions Limited's code. Before this repository is published,
-> those five files need RADD's agreement to be released under this repository's licence — or a personal
-> `RP.Statistics` upstream that both projects vendor from.
+> **Copyright note.** The five vendored RADD.Statistics files are RADD Solutions Limited's code, published
+> here with RADD Solutions' permission. Each keeps its original copyright header so its ownership stays on
+> record.
 
 ---
 
@@ -1379,4 +1379,5 @@ to Bletchley Park.
 ---
 
 *Licensed under the [Code Project Open License (CPOL) 1.02](LICENSE.txt), like RP.Math's original
-article — except the vendored statistics files; see the licence note above.*
+article — except the vendored statistics files, which remain © RADD Solutions Limited and are published
+with its permission (see the copyright note above).*
