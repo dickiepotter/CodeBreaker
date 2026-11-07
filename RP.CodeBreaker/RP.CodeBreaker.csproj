@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Deliberately AnyCPU and dependency-free beyond the BCL: the same assembly runs in tests, in a
+       console and in the browser under Blazor WebAssembly (the visualizer). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>RP.CodeBreaker</AssemblyName>
+    <RootNamespace>RP.CodeBreaker</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTrimmable>true</IsTrimmable>
+    <!-- CA5394/CA5350/CA5351: System.Random and small hand-made ciphers are the subject being taught,
+         not protection for anything real. Seeded, reproducible randomness is the requirement. -->
+    <NoWarn>$(NoWarn);CA5394;CA5350;CA5351</NoWarn>
+
+    <!-- NuGet package -->
+    <PackageId>RP.CodeBreaker</PackageId>
+    <Description>A teaching library for codes, ciphers and code breaking: classical ciphers (Caesar, affine, substitution, Vigenère, Beaufort, autokey, Playfair, Polybius, Bifid, ADFGVX, rail fence, columnar, Hill, one-time pad, XOR) and the Enigma machine, with the attacks that break them (frequency analysis, index of coincidence, Kasiski, hill climbing on quadgrams, simulated annealing, cribs, crib dragging and a Turing–Welchman bombe) — and, throughout, a measure of difficulty: the size of each key space, how known information shrinks it, and whether it can be searched in a few minutes.</Description>
+    <PackageTags>cryptography;cryptanalysis;cipher;enigma;bombe;vigenere;substitution;frequency-analysis;teaching</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <!-- English statistics, built from public-domain novels by tools/build_language_data.py. -->
+  <ItemGroup>
+    <EmbeddedResource Include="Language\Data\*.gz" LogicalName="RP.CodeBreaker.Language.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- Packed into the NuGet package; Visible=false keeps them out of the project tree. -->
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="..\LICENSE.txt" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RP.CodeBreaker.Tests" />
+  </ItemGroup>
+
+</Project>

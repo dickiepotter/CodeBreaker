@@ -1,0 +1,39 @@
+<script>
+  // The funnel: one bar per step from the full key space down to the work that was really needed.
+  // Widths are proportional to bits (log₂ of the keys left), so each halving of the search is the same
+  // step to the left wherever it happens.
+  import { shared } from './state.svelte.js';
+  import { bits, verdict } from './format.js';
+
+  let { difficulty } = $props();
+
+  const startBits = $derived(Math.max(1, difficulty.start.bits));
+  const times = $derived(difficulty.times[shared.attacker]);
+  const attacker = $derived(shared.meta?.attackers[shared.attacker]);
+</script>
+
+<div class="funnel">
+  <div class="funnel__step">
+    <div class="funnel__head">
+      <b>Start: {difficulty.start.description}</b>
+      <span>{difficulty.start.size} keys · {bits(difficulty.start.bits)} · {times.naive.text} ({verdict(times.naive.feasibility)})</span>
+    </div>
+    <div class="funnel__bar"><div style="width:100%"></div></div>
+  </div>
+  {#each difficulty.steps as step, i}
+    <div class="funnel__step">
+      <div class="funnel__head">
+        <b>→ {step.insight}</b>
+        <span>{step.size} keys · {bits(step.bits)} · saves {bits(step.bitsSaved)}</span>
+      </div>
+      <div class="funnel__bar"><div style="width:{Math.max(1.5, (100 * step.bits) / startBits)}%"></div></div>
+      <div class="funnel__why">{step.why}</div>
+    </div>
+  {/each}
+  <p class="note">
+    In all, the insights saved <b>{bits(difficulty.bitsSaved)}</b> of work — the search shrank by a factor of
+    2<sup>{Math.round(difficulty.bitsSaved)}</sup>. What is left takes <b>{times.remaining.text}</b>
+    ({verdict(times.remaining.feasibility)}) for {attacker?.name ?? 'the chosen searcher'}, against
+    {times.naive.text} for the naive brute force.
+  </p>
+</div>

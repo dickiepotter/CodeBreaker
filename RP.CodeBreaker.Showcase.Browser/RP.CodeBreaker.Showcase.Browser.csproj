@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+
+  <!-- The showcase catalog compiled to WebAssembly and exported to JavaScript, so the static GitHub
+       Pages site runs every attack in the visitor's browser (in a Web Worker) with no server. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <!-- The library formats only with the invariant culture, so the ICU data (and its download) can go. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- GitHub Pages compresses on the fly and ignores precompressed .br/.gz siblings. -->
+    <CompressionEnabled>false</CompressionEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RP.CodeBreaker.Showcase.Catalog\RP.CodeBreaker.Showcase.Catalog.csproj" />
+  </ItemGroup>
+
+</Project>

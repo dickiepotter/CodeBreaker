@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- The showcase served by ASP.NET: the Svelte client (built into wwwroot) plus /api/, running the
+       attacks as native .NET — far faster than the browser — for local use and live development. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RP.CodeBreaker.Showcase.Catalog\RP.CodeBreaker.Showcase.Catalog.csproj" />
+  </ItemGroup>
+
+</Project>

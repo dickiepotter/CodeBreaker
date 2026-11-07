@@ -1,0 +1,69 @@
+# Publishes the showcase to GitHub Pages as a static site. There is no server: the Svelte client runs
+# every attack in the visitor's browser, in a Web Worker, from RP.CodeBreaker.Showcase.Browser — the
+# showcase API compiled to WebAssembly. (The same arrangement as RP.Sound's showcase.)
+#
+# One-off setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+name: Deploy showcase to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push waits rather than cancelling one in flight.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: showcase-client/package-lock.json
+
+      # A code breaker that gives the wrong answer is worse than none.
+      - name: Test the library
+        run: dotnet test RP.CodeBreaker.Tests --configuration Release
+
+      - name: Publish the WebAssembly build
+        run: dotnet publish RP.CodeBreaker.Showcase.Browser --configuration Release --output publish/browser
+
+      - name: Build the static client
+        working-directory: showcase-client
+        run: |
+          npm ci
+          npm run build:pages
+
+      - name: Assemble the site
+        run: |
+          cp -r publish/browser/wwwroot/_framework showcase-client/dist/
+          touch showcase-client/dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: showcase-client/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

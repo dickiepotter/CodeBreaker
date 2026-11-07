@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  # Build everything and run the tests on Linux (the library is BCL-only and cross-platform).
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore CodeBreaker.sln
+
+      - name: Build (Release)
+        run: dotnet build CodeBreaker.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test RP.CodeBreaker.Tests -c Release --no-build --verbosity normal
+
+      - name: Pack the library
+        run: dotnet pack RP.CodeBreaker/RP.CodeBreaker.csproj -c Release --no-build -o artifacts
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: artifacts/*.nupkg

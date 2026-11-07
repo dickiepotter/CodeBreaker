@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The showcase's interface to the library (JSON in, JSON out), shared by the ASP.NET server and the
+       WebAssembly build so both answer every request identically. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>RP.CodeBreaker.Showcase</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RP.CodeBreaker\RP.CodeBreaker.csproj" />
+  </ItemGroup>
+
+</Project>

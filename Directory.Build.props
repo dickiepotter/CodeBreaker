@@ -1,0 +1,24 @@
+<Project>
+
+  <!-- Settings shared by every project in the repository. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Incomplete XML docs should not fail the build (CS1591 missing comment, CS1573 missing param). -->
+    <NoWarn>$(NoWarn);CS1591;CS1573</NoWarn>
+  </PropertyGroup>
+
+  <!-- Assembly / package metadata shared across the solution. -->
+  <PropertyGroup>
+    <Authors>Richard Potter</Authors>
+    <Company>Richard Potter</Company>
+    <Product>RP.CodeBreaker</Product>
+    <Copyright>Copyright © Richard Potter</Copyright>
+    <Version>1.0.0</Version>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/dickiepotter/CodeBreaker</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/dickiepotter/CodeBreaker</PackageProjectUrl>
+  </PropertyGroup>
+
+</Project>
