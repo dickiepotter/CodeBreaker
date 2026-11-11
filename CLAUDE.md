@@ -22,7 +22,11 @@ build) or behind ASP.NET at native speed (`RP.CodeBreaker.Showcase`, local). Dep
   test that reproduces it (see `BreakCheckTests`) before fixing it.
 - **The site explains itself.** Every page has a `Guide` ("How to use this page") and `Explain` notes on
   its panels. The README does **not** describe the site: it is a step-by-step tutorial on code breaking
-  and the library only, and names neither the showcase's internals nor the vendored libraries.
+  and the library only, and names neither the showcase's internals nor the vendored libraries. No
+  building, testing, deploying, project-layout, roadmap or status sections: it is a tutorial.
+- **Plain punctuation in writing.** No em or en dashes, no arrow symbols and no ellipsis character:
+  use commas, colons, brackets or full stops, write `->` in code, and three full stops for "...".
+  Maths symbols (×, ≈, ², −) are fine.
 - **Ciphers are immutable objects built from their key** and implement `ICipher`; codes implement
   `ICode`. Register new ones in `CipherRegistry` / `CodeCatalogue` so the site's converter picks them up.
 - **The showcase talks only through `ShowcaseApi`** (JSON built with `JsonNode`, no reflection, so the

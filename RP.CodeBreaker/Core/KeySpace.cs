@@ -148,5 +148,5 @@ public sealed class KeySpace
 
     /// <inheritdoc/>
     public override string ToString() =>
-        string.Format(CultureInfo.InvariantCulture, "{0} keys ({1:0.0} bits) — {2}", Format(this.Size), this.Bits, this.Description);
+        string.Format(CultureInfo.InvariantCulture, "{0} keys ({1:0.0} bits) - {2}", Format(this.Size), this.Bits, this.Description);
 }

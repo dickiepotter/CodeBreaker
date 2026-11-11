@@ -93,7 +93,7 @@ public sealed class Difficulty
         };
         foreach (Reduction r in this.steps)
         {
-            lines.Add(string.Format(CultureInfo.InvariantCulture, "  → {0,-44} {1} keys ({2:0.0} bits)", r.Insight, KeySpace.Format(r.After), KeySpace.Log2(r.After)));
+            lines.Add(string.Format(CultureInfo.InvariantCulture, "  -> {0,-44} {1} keys ({2:0.0} bits)", r.Insight, KeySpace.Format(r.After), KeySpace.Log2(r.After)));
         }
 
         return string.Join(Environment.NewLine, lines);

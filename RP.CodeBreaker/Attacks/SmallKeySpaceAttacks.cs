@@ -16,7 +16,7 @@ public static class CaesarAttack
             CaesarCipher.KeySpace,
             Enumerable.Range(0, 26),
             s => new CaesarCipher(s).Decrypt(ciphertext),
-            s => $"shift {s} (A→{Letters.ToLetter(s)})",
+            s => $"shift {s} (A->{Letters.ToLetter(s)})",
             options);
 
     /// <summary>

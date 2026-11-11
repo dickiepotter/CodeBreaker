@@ -32,7 +32,7 @@ public sealed class CaesarCipher : ICipher
     public string Name => "Caesar";
 
     /// <inheritdoc/>
-    public string KeyDescription => $"shift {this.Shift} (A→{Letters.ToLetter(this.Shift)})";
+    public string KeyDescription => $"shift {this.Shift} (A->{Letters.ToLetter(this.Shift)})";
 
     /// <inheritdoc/>
     public string Encrypt(string plaintext) => Letters.MapLetters(plaintext, (p, _) => p + this.Shift);

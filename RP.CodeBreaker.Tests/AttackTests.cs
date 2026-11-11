@@ -21,7 +21,7 @@ public class AttackTests
     public void Caesar()
     {
         BreakResult r = CaesarAttack.Break(FamousCases.Caesar.Ciphertext);
-        Assert.AreEqual("shift 3 (A→D)", r.Key);
+        Assert.AreEqual("shift 3 (A->D)", r.Key);
         Assert.IsTrue(r.LooksLikeEnglish);
         Assert.AreEqual(3, CaesarAttack.ShiftByFrequency(FamousCases.Caesar.Ciphertext));
     }
