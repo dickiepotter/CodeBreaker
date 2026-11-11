@@ -14,23 +14,32 @@ message turned a problem bigger than the number of grains of sand on Earth into 
 whirring drums could finish before lunch. This library tries to make that reasoning something you can
 run, measure and change.*
 
-**Try it in your browser:** [the showcase](https://dickiepotter.github.io/CodeBreaker/) — the same
-library compiled to WebAssembly, running in a Web Worker behind a Svelte front end.
-
 ---
 
 ## Contents
 
+**Getting started**
+
 - [What this project is for](#what-this-project-is-for)
+- [A brief history of Bletchley Park](#a-brief-history-of-bletchley-park)
 - [A few words we will use](#a-few-words-we-will-use)
+
+**Step 1 — the ideas**
+
 - [Codes and ciphers: converting both ways](#codes-and-ciphers-converting-both-ways)
 - [How difficulty is measured](#how-difficulty-is-measured)
 - [The difficulty ladder: what falls in a few minutes?](#the-difficulty-ladder-what-falls-in-a-few-minutes)
 - [How known information shrinks the search](#how-known-information-shrinks-the-search)
 - [When no amount of computing will do: unicity distance](#when-no-amount-of-computing-will-do-unicity-distance)
+
+**Step 2 — the code breaker's tools**
+
 - [Teaching a computer what English looks like](#teaching-a-computer-what-english-looks-like)
 - [Is the answer right? Checking before believing](#is-the-answer-right-checking-before-believing)
 - [The first look: what kind of cipher is it?](#the-first-look-what-kind-of-cipher-is-it)
+
+**Step 3 — breaking each cipher**
+
 - [The ciphers, one by one](#the-ciphers-one-by-one)
   - [Caesar, ROT13 and Atbash](#caesar-rot13-and-atbash)
   - [Affine](#affine)
@@ -47,15 +56,22 @@ library compiled to WebAssembly, running in a Web Worker behind a Svelte front e
   - [Repeating-key XOR](#repeating-key-xor)
   - [Enigma](#enigma)
 - [Breaking Enigma: the bombe](#breaking-enigma-the-bombe)
+
+**Step 4 — the limits, and the real thing**
+
 - [Modern cryptography: where the shortcuts run out](#modern-cryptography-where-the-shortcuts-run-out)
 - [Famous cases](#famous-cases)
+
+**Step 5 — doing it yourself**
+
+- [Breaking a message, step by step](#breaking-a-message-step-by-step)
 - [Common situations, and what to do](#common-situations-and-what-to-do)
 - [Using the library](#using-the-library)
-- [The demo website](#the-demo-website)
-  - [Finding your way around the site](#finding-your-way-around-the-site)
-- [Building, testing and deploying](#building-testing-and-deploying)
-- [Code reused from other projects, and keeping it in sync](#code-reused-from-other-projects-and-keeping-it-in-sync)
-- [Points of interest](#points-of-interest)
+- [Building and testing](#building-and-testing)
+
+**Afterwards**
+
+- [Further reading](#further-reading)
 - [Future considerations](#future-considerations)
 - [Status and history](#status-and-history)
 
@@ -94,6 +110,37 @@ A few principles run through everything:
 
 ---
 
+## A brief history of Bletchley Park
+
+Bletchley Park is a Victorian country house in Buckinghamshire, about fifty miles north-west of London.
+In 1938, with war looking likely, the head of the Secret Intelligence Service, Admiral Sir Hugh
+Sinclair, bought it — reportedly with his own money — as a safe home for the Government Code and Cypher
+School, Britain's code breakers. They first arrived in September 1938, disguised as "Captain Ridley's shooting
+party".
+
+They had a head start they hadn't earned themselves. The Polish Cipher Bureau had been reading Enigma
+since 1932, and in July 1939, five weeks before Germany invaded Poland, Marian Rejewski and his
+colleagues handed the British and French everything: their methods, their reconstruction of the machine,
+and replica Enigmas. When the Germans tightened their procedures and the Polish methods stopped
+working, Alan Turing designed a new machine — the **bombe** — that searched for settings using a guessed
+word, and Gordon Welchman added the diagonal board that made it fast enough to matter. The first bombe
+ran in March 1940. [Breaking Enigma](#breaking-enigma-the-bombe) shows how it worked, step by step.
+
+The work was organised in wooden huts on the lawn: Hut 6 broke Army and Air Force Enigma and Hut 3 turned
+the results into intelligence; Hut 8, under Turing, broke the harder Naval Enigma and Hut 4 used it. The
+intelligence was code-named **Ultra**. Later, a separate section attacked the German high command's
+Lorenz teleprinter cipher ("Tunny"): Bill Tutte worked out how the machine must be built without ever
+seeing one, and Tommy Flowers, a Post Office engineer, built **Colossus** to break it — one of the first
+electronic computers, working by February 1944 and in time for D-Day.
+
+By 1945 nearly ten thousand people worked there, about three-quarters of them women — the Wrens who ran
+the bombes, the operators of Colossus, the clerks and the linguists. All of them kept the secret for
+some thirty years, until the story began to come out in the 1970s. The house is now a museum, and The
+National Museum of Computing next door has a working rebuilt bombe and Colossus. It was standing in front
+of that bombe that started this library.
+
+---
+
 ## A few words we will use
 
 - **Plaintext** — the message as written. **Ciphertext** — the message after encryption.
@@ -126,9 +173,6 @@ A few principles run through everything:
 - **Cryptography** is making ciphers; **cryptanalysis** is breaking them. Together they are
   **cryptology**.
 - **Code** and **cipher** mean different things — see the next section.
-
-The [showcase](https://dickiepotter.github.io/CodeBreaker/) has the same glossary at the foot of its
-difficulty ladder page.
 
 ---
 
@@ -172,8 +216,8 @@ mistaken for encryption. It is not.) Secret codes keep the table private. There 
 the book *is* the secret, and a code is broken by rebuilding the book from context, one group at a
 time — which is exactly how the Admiralty's Room 40 read the Zimmermann telegram in 1917.
 
-For anything that needs to convert generically (the demo site's converter page, a command line), two
-registries list everything:
+For anything that needs to convert generically (a converter screen, a command line), two registries
+list everything:
 
 ```csharp
 foreach (ICode code in CodeCatalogue.All) { ... code.Encode(text) ... }
@@ -214,8 +258,8 @@ lesson of the library: **a big key space is easy to build, and on its own it gua
 Simple substitution has more keys than DES and is solved over breakfast.
 
 > The library computes `log₂(n!)` for very large *n* through the log-gamma function
-> (`KeySpace.Log2Factorial`), because ln n! = ln Γ(n + 1). That function comes from the vendored
-> statistics code — see [code reused from other projects](#code-reused-from-other-projects-and-keeping-it-in-sync).
+> (`KeySpace.Log2Factorial`), because ln n! = ln Γ(n + 1). Working with the logarithm keeps the numbers
+> small enough to handle: 100! has 158 digits, but log₂(100!) is just under 525.
 
 ### From keys to time
 
@@ -408,7 +452,7 @@ Enigma operators chose start positions like AAA or keyboard runs like QWE ("cill
 could be guessed from the first message of the day (the "Herivel tip"); the RAF laid mines in
 particular places so that German warnings would contain known place names ("gardening"). None of this
 is mathematics, and all of it shrinks the search. The modern equivalent is the [password a person
-chose](#passwords-and-pins-the-key-not-the-cipher).
+chose](#passwords-and-pins--the-key-not-the-cipher).
 
 ---
 
@@ -564,8 +608,8 @@ Console.WriteLine($"{check.Confidence}: {check.Summary}");
 foreach (string reason in check.Reasons) Console.WriteLine(reason);
 ```
 
-The check exists because a reader tried exactly that on the site — encrypted a sentence, added a crib,
-pressed *Break it* — and got a confident answer that was completely wrong. Running every cipher that way
+The check exists because a reader tried exactly that — encrypted a sentence, added a crib, asked for a
+break — and got a confident answer that was completely wrong. Running every cipher that way
 turned up five separate causes, all now fixed, and each a small lesson:
 
 - **The statistics chose the wrong cipher.** On 49 letters, a rail fence's letter counts look more like a
@@ -590,9 +634,6 @@ turned up five separate causes, all now fixed, and each a small lesson:
   (7,488 of 157,248) was wrongly rejected, and the attack crashed when it met one. The inverse is now worked out from the
   determinant (the adjugate divided by the determinant), which only ever divides by the determinant
   itself. The test suite now checks every one of the 456,976 matrices.
-
-On the site the verdict appears as a coloured banner above every answer on the Break page, with the
-cribs it found and didn't, and the reasons.
 
 ---
 
@@ -709,7 +750,7 @@ confirms it or it reads very clearly), the other quick attacks run too, and the 
 the message is long enough for that attack, then the score.
 
 Running "the other attacks too" has a cost, and one attack dominates it: the columnar search, about a
-second natively and far longer in a browser. So Auto skips it unless it could possibly be right. A
+second, far longer than all the others put together. So Auto skips it unless it could possibly be right. A
 transposition only moves letters, so its letter counts are exactly the language's: chi-squared per letter
 is about 0.1–0.7 for any transposition and 3 or more for anything that changes letters. (The chi-squared
 *p-value* won't do here: on a long text it "rejects" genuine English over tiny differences of style.) And
@@ -835,8 +876,7 @@ the right position by eye. With a crib, the attack tries every period and keeps 
 gives a self-consistent key — enough to break a 42-letter message whose statistics alone say nothing.
 
 **A few minutes?** About 30 milliseconds for the 327-letter example — provided the key length is within
-the search. The attack looks at periods up to `AttackOptions.MaxKeyLength` (12 by default, *Longest
-key* on the site). A 13-letter key such as FORTIFICATION is then simply not considered, and the attack
+the search. The attack looks at periods up to `AttackOptions.MaxKeyLength` (12 by default). A 13-letter key such as FORTIFICATION is then simply not considered, and the attack
 returns the best 12-or-fewer-letter key, which is gibberish; raise the limit and it falls at once.
 
 ### Autokey
@@ -1060,7 +1100,7 @@ ciphertext letter under it, labelled with its position. `BuildMenu` does this an
 W—M(0)  E—I(1)  T—C(2)  T—I(3)  E—D(4)  R—E(5)  B—T(6)  E—T(7)  R—U(8)  I—B(9)  C—T(10)  H—S(11)  T—W(12)
 ```
 
-Drawn as a graph (the demo site draws it for any crib):
+Drawn as a graph:
 
 ```
               M
@@ -1227,7 +1267,7 @@ is why real systems use slow, salted password hashes (bcrypt, scrypt, Argon2) an
 
 ## Famous cases
 
-`FamousCases.All` holds a message for each of these, to break with the library or on the demo site.
+`FamousCases.All` holds a message for each of these, to break with the library.
 Where the historical ciphertext is public and short (Kryptos K1) it is used as it stands; otherwise the
 message is new text in the spirit of the original, enciphered here, so it can be broken with the same
 method that broke the real thing.
@@ -1245,7 +1285,7 @@ method that broke the real thing.
 | **Kryptos K1** (real ciphertext) | 1990 | Keyed Vigenère | James Gillogly, 1999 (NSA in 1992) | `VigenereCipher("PALIMPSEST", "KRYPTOS")` |
 | **Home-made XOR** | today | Repeating-key XOR | Hamming distance, then byte by byte | `XorAttack`, 13 ms |
 
-A few more that the library tells the story of without a demo:
+A few more that the library tells the story of without a message to break:
 
 - **Lorenz (Tunny) and Colossus.** Hitler's high command used the Lorenz SZ40/42 teleprinter cipher,
   which added a stream of pseudo-random bits to each 5-bit ITA2 character (`Ita2Code` is that code). On 30
@@ -1257,6 +1297,70 @@ A few more that the library tells the story of without a demo:
   340-symbol one held out until 2020, when a team broke it with a modern solver.
 - **Naval Enigma** added rotors VI–VIII, then a fourth rotor in February 1942, blacking out U-boat traffic
   for ten months until captured material and cribs reopened it.
+
+---
+
+## Breaking a message, step by step
+
+Everything above, boiled down to a routine: the order I go in when someone hands me a message and I know
+nothing about it. Each step links back to where it is explained properly.
+
+1. **Gather what you know before you look at the letters.** Who sent it, to whom, when, in what
+   language, and what is it likely to say? A weather station sends weather reports; a letter starts
+   DEAR. Every word you can guess is a [crib](#3-cribs--words-the-context-suggests), and a crib is
+   worth more than any amount of computing.
+2. **Clean it up and count it.** `Letters.Normalise` strips it to bare capitals. Note the length: below
+   the [unicity distance](#when-no-amount-of-computing-will-do-unicity-distance) no method can promise a
+   unique answer, and each attack has [a length below which it shouldn't be trusted](#is-the-answer-right-checking-before-believing).
+3. **Take the first look.** Is it only digits 1–5, or only ADFGVX? What is the index of coincidence —
+   one alphabet (about 0.066) or many (nearer 0.04)? Do the letter counts already match English, so the
+   letters have only been moved? `CipherIdentifier.Identify` asks all of these and gives its reasons. See
+   [the first look](#the-first-look-what-kind-of-cipher-is-it).
+4. **If it uses many alphabets, find the key length.** `Periodicity.RankPeriods` cuts the text into
+   columns for each guess and measures them; Kasiski's repeats vote alongside. See
+   [the key length](#the-key-length--periodicity).
+5. **Choose the attack.** Each cipher's section says how it is broken. If you are unsure, let
+   `AutoBreaker.BreakAsync` try the likely ones in turn and rank what they find.
+6. **Check the answer before you believe it.** `BreakCheck.Check` asks whether every crib is there,
+   whether it reads, and whether the message was long enough. Only *Solved* means solved.
+7. **If it failed, change one thing at a time.** Add or correct a crib, raise `Restarts`, try another
+   `Seed` (the climbs are randomised), raise `MaxKeyLength`, or try a different family of cipher. The
+   [common situations](#common-situations-and-what-to-do) below go through the usual cases.
+8. **Read the funnel.** The `Difficulty` that comes back with every answer shows how big the haystack
+   started, how much each insight removed, and how much work was left — the whole point of this library.
+
+In code, the same eight steps:
+
+```csharp
+using RP.CodeBreaker;
+using RP.CodeBreaker.Attacks;
+
+// 1. What we know: the context says it probably mentions the harbour.
+var options = new AttackOptions { Cribs = ["HARBOUR"] };
+
+// 2. Clean it up and count it.
+string letters = Letters.Normalise(ciphertext);
+Console.WriteLine($"{letters.Length} letters");
+
+// 3. The first look.
+Console.WriteLine($"IoC {FrequencyAnalysis.IndexOfCoincidence(letters):F4}");
+foreach (CipherGuess g in CipherIdentifier.Identify(letters))
+    Console.WriteLine($"{g.Family} ({g.Confidence:P0}): {g.Reason}");
+
+// 4. If it looks like many alphabets, the likely key lengths.
+foreach (PeriodCandidate p in Periodicity.RankPeriods(letters).Take(3))
+    Console.WriteLine($"period {p.Period}: IoC {p.AverageIoC:F4}, {p.KasiskiVotes} Kasiski votes");
+
+// 5. Break it — here, letting the library choose the attack.
+var (guesses, best, all) = await AutoBreaker.BreakAsync(ciphertext, options);
+
+// 6. Check it.
+BreakCheck check = BreakCheck.Check(best!, ciphertext, options);
+Console.WriteLine($"{check.Confidence}: {check.Summary}");
+
+// 8. How hard was it, really?
+Console.WriteLine(best!.Difficulty);
+```
 
 ---
 
@@ -1292,6 +1396,7 @@ add a crib: a wrong key almost never produces your crib by accident.
 
 **"It's a modern cipher."** Don't attack the cipher. Attack the key: how was it chosen, and from how
 large a set? That is where real systems fail.
+
 
 ---
 
@@ -1339,129 +1444,32 @@ BreakResult p = await PlayfairAttack.BreakAsync(playfairText, options);
 | `RP.CodeBreaker.Attacks` | one class per attack, `BruteForce`, `AutoBreaker`, `EnigmaBombe` |
 | `RP.CodeBreaker.Modern` | `ToyRsa`, `Factoring`, `PasswordCracking` |
 | `RP.CodeBreaker.Examples` | `FamousCases` |
-| `RP.CodeBreaker.Statistics` | vendored special functions and the chi-squared distribution |
+| `RP.CodeBreaker.Statistics` | special functions (log-gamma) and the chi-squared distribution |
 
 **Synchronous and asynchronous.** The slow searches (`SubstitutionAttack`, `ColumnarAttack`,
 `PlayfairAttack`, `PolybiusAttack`, `EnigmaBombe`) have a `…Async` form that calls
-`AttackOptions.Breathe` now and again, for hosts that must share one thread with a user interface (Blazor
-WebAssembly, say: pass `async () => { StateHasChanged(); await Task.Delay(1); }`). The showcase doesn't
-need it — it runs the synchronous `Break` in a Web Worker, where blocking harms nothing.
-`AttackOptions.Progress` is called from inside the search, so give it a reporter that acts at once (the
-standard `Progress<T>` defers to a synchronisation context, which a busy single thread never reaches).
+`AttackOptions.Breathe` now and again, for programs that must share one thread with a user interface
+(.NET running in a browser, say). `AttackOptions.Progress` is called from inside the search, so give it
+a reporter that acts at once (the standard `Progress<T>` defers to a synchronisation context, which a
+busy single thread never reaches).
 
 **Randomness.** The randomised searches take `AttackOptions.Seed`, so a run can be repeated exactly.
 
 ---
 
-## The demo website
-
-The showcase is built the same way as RP.Sound's: a **Svelte** front end, and the C# library behind a
-small JSON API that can run in two places.
-
-```mermaid
-graph LR
-    UI["Svelte client<br/>(showcase-client)"]
-    API["ShowcaseApi<br/>JSON in, JSON out<br/>(RP.CodeBreaker.Showcase.Catalog)"]
-    W["Web Worker<br/>.NET runtime in WebAssembly<br/>(RP.CodeBreaker.Showcase.Browser)"]
-    S["ASP.NET server<br/>native .NET<br/>(RP.CodeBreaker.Showcase)"]
-    L["RP.CodeBreaker"]
-    UI -- "GitHub Pages build" --> W
-    UI -- "local / development" --> S
-    W --> API
-    S --> API
-    API --> L
-```
-
-- **On GitHub Pages** there is no server. The library and `ShowcaseApi` are compiled to WebAssembly
-  and run inside a **Web Worker** — a background thread of the browser — so a long search (the bombe,
-  Playfair's annealing) never freezes the page. Progress reports come back from C# through a
-  `[JSImport]` as the search runs, and **Cancel** stops the worker outright (a busy WebAssembly thread
-  cannot read a "stop" message); the next run starts a fresh one.
-- **Locally**, `RP.CodeBreaker.Showcase` serves the same client and maps the same API onto
-  `POST /api/{operation}`, running the attacks as native .NET — the timings this document quotes.
-
-Both answer every request identically, because both call the one `ShowcaseApi`. The pages are the
-difficulty ladder (with the "few minutes" line for any attacker), a two-way converter for every code and
-cipher, an analysis workbench (frequency charts, IoC, period finding, Kasiski, cipher identification), the
-code breaker (every attack, with cribs, progress, cancel, the difficulty funnel and a verdict on the
-answer), an Enigma simulator and bombe (with the menu drawn as a graph), the famous cases, and the modern
-section (RSA factoring, PIN and dictionary cracking, a key-space calculator).
-
-WebAssembly in the browser is interpreted, so the heavy searches are several times slower than native
-.NET — though less than you might fear. Measured in Chrome: the Babington substitution solves in about
-70 ms, and the bombe over rotors I, II and IV in about 5 seconds (0.6 s natively); over all five rotors,
-allow a minute or so. Hashing is much slower in the browser, so the dictionary attack there uses a short
-word list.
-
-### Finding your way around the site
-
-Every page opens with a green **How to use this page** box — the steps in order, and what to look for —
-which stays closed once you close it. Inside the panels, **▸ What am I looking at?** links open a short
-explanation of each chart, number and result. This section is the same tour, for reading here.
-
-If you have ten minutes, take the pages in this order:
-
-1. **Convert.** Pick a cipher, type a few sentences (the attacks need text to count — a hundred letters
-   or more for the harder ciphers), press *Encrypt ↓*. The green box shows how many keys the cipher could
-   have used and how long trying them all would take on a laptop: the upper limit, not the real
-   difficulty. *Random key* makes a sensible key, and *Analyse this ciphertext →* and *Try to break it →*
-   carry your ciphertext to the next two pages. The left-hand panel does the same for codes, which have no
-   key at all.
-2. **Analyse.** The first look, with no key. Five numbers across the top — letters, index of coincidence,
-   entropy, chi-squared against English, Friedman's key-length estimate — then the letter counts against
-   English, and for a repeating key, a chart of every period with the likely one in green. "What is it
-   likely to be?" gives the families with their reasons. See [the first look](#the-first-look-what-kind-of-cipher-is-it).
-3. **Break.** Choose an attack, or leave it on *Auto*; the line under the menu says how the chosen attack
-   works. Add a crib if you have one. Press *Break it* and watch the best text so far as it searches.
-   The answer comes with a **verdict** — ✓ Solved, ? Doubtful or ✗ Wrong — and its reasons (see
-   [checking the answer](#is-the-answer-right-checking-before-believing)); then the funnel on the right
-   shows the key space shrinking at each insight. *Restarts*, *Longest key* and *Iterations* can stay as
-   they are unless an answer comes back half-readable.
-4. **Enigma & bombe.** On the left, a machine to type on: the lamps, and the rotor windows after every key
-   press, with the double step marked. On the right, the bombe: the WETTERBERICHT case is loaded, the
-   places the crib can sit are highlighted (Enigma never enciphers a letter to itself), the menu is drawn
-   as a graph with its loops counted, and *Run the bombe* recovers the settings and the message. See
-   [breaking Enigma](#breaking-enigma-the-bombe).
-5. **Famous cases.** One card per episode, with the story, the ciphertext (a badge marks the real ones),
-   the cribs the situation would have given, and a button that takes the message to the right page with
-   everything filled in. VENONA's card has crib dragging built in.
-6. **Modern.** Make a toy RSA key and factor it four ways, then move the slider and watch the work grow;
-   crack a PIN and a password from their SHA-256 hashes; and work out any key space with the calculator.
-
-The [difficulty ladder](#the-difficulty-ladder-what-falls-in-a-few-minutes) — the home page — ties it
-together, and has the glossary at its foot.
-
-## Building, testing and deploying
+## Building and testing
 
 ```
-dotnet build CodeBreaker.sln
+dotnet build RP.CodeBreaker
 dotnet test RP.CodeBreaker.Tests
-
-# the showcase served by ASP.NET (native speed): build the client into its wwwroot, then run it
-cd showcase-client && npm install && npm run build && cd ..
-dotnet run --project RP.CodeBreaker.Showcase            # http://localhost:5231
-
-# or live-reload development: the server in one terminal, Vite (proxying /api) in another
-cd showcase-client && npm run dev
-
-# the static GitHub Pages build, exactly as deployed
-dotnet publish RP.CodeBreaker.Showcase.Browser -c Release -o publish/browser
-cd showcase-client && npm run build:pages && cp -r ../publish/browser/wwwroot/_framework dist/
 ```
 
-The library targets .NET 10 and depends on nothing beyond the base class library; the showcase needs
-Node.js for the Svelte build. The tests (MSTest)
+The library targets .NET 10 and depends on nothing beyond the base class library. The tests (MSTest)
 check every cipher against published test vectors (the Enigma `BDZGO` vector and double step, the
 Playfair and Hill textbook examples, Kryptos K1), round-trip every cipher and code, and break every
 famous case.
 
-The site deploys to GitHub Pages from `.github/workflows/pages.yml` on every push to `main`: it runs the
-tests, publishes the WebAssembly build, builds the Svelte client in its `pages` mode (relative URLs, so it
-works under the repository's Pages path; routes live after a `#`, so deep links need no server rewrites)
-and copies the .NET runtime's `_framework` folder in beside it. One-off setup: **Settings → Pages → Build and deployment → Source: GitHub
-Actions**. `.github/workflows/ci.yml` builds, tests and packs the library on every push and pull request.
-
-### Project layout
+### Where things are
 
 ```
 RP.CodeBreaker/
@@ -1473,46 +1481,13 @@ RP.CodeBreaker/
   Attacks/      one attack per cipher family, AutoBreaker, EnigmaBombe
   Modern/       ToyRsa, Factoring, PasswordCracking
   Examples/     FamousCases
-  Vendored/     RADD.Statistics (see below)
 RP.CodeBreaker.Tests/                MSTest
-RP.CodeBreaker.Showcase.Catalog/     ShowcaseApi: the showcase's JSON interface to the library
-RP.CodeBreaker.Showcase.Browser/     ShowcaseApi compiled to WebAssembly, exported to JavaScript
-RP.CodeBreaker.Showcase/             ASP.NET host: the client plus /api/, at native speed
-showcase-client/                     the Svelte + Vite front end, and the Web Worker that hosts .NET
-tools/build_language_data.py
+tools/build_language_data.py         rebuilds the language tables from public-domain texts
 ```
 
 ---
 
-## Code reused from other projects, and keeping it in sync
-
-Before writing this library I looked through my other projects for anything worth reusing rather than
-rewriting.
-
-- **RADD.Statistics** (in the RADD Desktop Suite) supplied the special functions and the chi-squared
-  distribution: `LogFactorial` for factorial key spaces, and the upper-tail probability behind
-  `FrequencyAnalysis.ChiSquaredPValue`. Five files are **vendored** — copied unchanged except for the
-  namespace (`RADD.Statistics` → `RP.CodeBreaker.Statistics`) — into `RP.CodeBreaker/Vendored/RADD.Statistics`,
-  whose `UPSTREAM.md` records the source, the file list and the synced commit.
-- **RP.Math** (and its twin RADD.Math) is geometry and floating-point numerics; nothing in it is needed to
-  break ciphers, so nothing is taken. The number theory this library needs (`NumberTheory`) lives here.
-- **The showcase and its deployment workflow** follow RP.Sound's: a Svelte client, the library behind a
-  shared API exported from a plain .NET WebAssembly build into a Web Worker, an ASP.NET host for local
-  use, and the same Pages workflow. The look (palette, navigation, panels) follows RP.Math's visualizer.
-
-Vendored code is kept in step **both ways**, using the same protocol as RADD.Math and RP.Math: on any
-commit touching the vendored files, changes upstream are brought in, changes made here are ported back
-(on a branch — never onto someone's work in progress), the namespace difference is ignored, and the
-synced commit in `UPSTREAM.md` is updated. The full protocol is in `CLAUDE.md`. New *generic* statistics
-belong upstream first; cryptography-specific code stays here.
-
-> **Copyright note.** The five vendored RADD.Statistics files are RADD Solutions Limited's code, published
-> here with RADD Solutions' permission. Each keeps its original copyright header so its ownership stays on
-> record.
-
----
-
-## Points of interest
+## Further reading
 
 - Simon Singh, *The Code Book* (1999) — the best popular history, and the inspiration for much of the
   famous-cases section.
@@ -1540,9 +1515,6 @@ Things deliberately not yet built, recorded so the reasoning isn't lost:
 - **Naval Enigma** with the fourth rotor, and **Banburismus**, Turing's statistical method for cutting
   down the rotor orders before the bombe ran.
 - **Double transposition** and running-key ciphers.
-- **Faster in the browser.** WebAssembly ahead-of-time compilation (the `wasm-tools` workload) would make
-  the heavy searches much quicker on the site, at the cost of a larger download and a longer build.
-  Splitting the bombe's rotor orders across several workers would use more than one core.
 
 ---
 
@@ -1551,13 +1523,10 @@ Things deliberately not yet built, recorded so the reasoning isn't lost:
 New, and complete for what it sets out to do: sixteen ciphers and the Enigma machine, ten codes, attacks
 that break every cipher in the catalogue that has a practical attack (on realistic messages), a bombe
 that recovers full Enigma settings from a crib, English and German language models, a difficulty model
-behind all of it, a check on every answer, a Svelte showcase that runs the library in a Web Worker and
-explains itself as you use it, and sixty-two tests. It targets
-.NET 10. It was started in November 2026, shortly after a visit
-to Bletchley Park.
+behind all of it, a check on every answer, and sixty-two tests. It targets .NET 10. It was started in
+November 2026, shortly after a visit to Bletchley Park.
 
 ---
 
-*Licensed under the [Code Project Open License (CPOL) 1.02](LICENSE.txt), like RP.Math's original
-article — except the vendored statistics files, which remain © RADD Solutions Limited and are published
-with its permission (see the copyright note above).*
+*Licensed under the [Code Project Open License (CPOL) 1.02](LICENSE.txt). A few files carry their own
+copyright headers; those headers apply to those files.*
