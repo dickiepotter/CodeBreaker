@@ -1468,5 +1468,5 @@ busy single thread never reaches).
 
 ---
 
-*Licensed under the [Code Project Open License (CPOL) 1.02](LICENSE.txt). A few files carry their own
-copyright headers; those headers apply to those files.*
+*Licensed under the [MIT licence](LICENSE.txt): use it freely, but keep the copyright notice. A few
+files carry their own copyright headers; those headers apply to those files.*

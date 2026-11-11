@@ -1,25 +1,21 @@
-The Code Project Open License (CPOL) 1.02
+MIT License
 
-Copyright © Richard Potter
+Copyright (c) 2026 Richard Potter
 
-This software and the accompanying article documentation are licensed under
-The Code Project Open License (CPOL) 1.02. The full license text is available
-at:
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-    https://www.codeproject.com/info/cpol10.aspx
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Summary of the main terms (the canonical license linked above governs):
-
-  - You may use the source code and executable, in whole or in part, in your
-    own applications, including commercial ones.
-  - You may modify the source code, and distribute the modified source and
-    derived binaries.
-  - The source code and binaries are provided "as is" without warranty of any
-    kind, and you use them at your own risk.
-  - You agree not to hold the author liable for any damages arising from the
-    use of the work.
-  - You may not sell the source code or the article(s) on their own, nor claim
-    authorship of the work.
-
-Originally published as "A Vector Type for C#" on CodeProject:
-    https://www.codeproject.com/Articles/17425/A-Vector-Type-for-C
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

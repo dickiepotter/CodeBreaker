@@ -10,7 +10,7 @@ authored in this repository. Keep divergence to the namespace rename only.
 | **Upstream repository** | RADD.DesktopSuite (Azure DevOps, RADD Solutions) |
 | **Synced baseline commit** | `6f620825a677cf1cc27c36c0f6414bb60081149c` (last commit touching `libs/RADD.Statistics`) |
 | **Imported on** | 2026-11-07 |
-| **Last synced** | 2026-11-07 |
+| **Last synced** | 2026-11-11 |
 
 ## What was taken, and why
 
@@ -42,6 +42,6 @@ file should be identical to its upstream counterpart (bar line endings and byte-
 These files are RADD Solutions Limited's code. **RADD Solutions Limited has allowed them to be
 published in this repository** (November 2026). Each file keeps its original copyright header,
 `// Copyright (c) 2026 RADD Solutions Limited. …`, so their ownership stays on record; the header must be
-kept on every sync and never removed or rewritten. The rest of the repository is under CPOL.
+kept on every sync and never removed or rewritten. The rest of the repository is under the MIT licence (`LICENSE.txt`).
 
 The two-way sync protocol is in the repository-root `CLAUDE.md`.

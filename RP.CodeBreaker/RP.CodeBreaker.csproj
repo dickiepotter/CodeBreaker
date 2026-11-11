@@ -17,7 +17,7 @@
     <Description>A teaching library for codes, ciphers and code breaking: classical ciphers (Caesar, affine, substitution, Vigenère, Beaufort, autokey, Playfair, Polybius, Bifid, ADFGVX, rail fence, columnar, Hill, one-time pad, XOR) and the Enigma machine, with the attacks that break them (frequency analysis, index of coincidence, Kasiski, hill climbing on quadgrams, simulated annealing, cribs, crib dragging and a Turing–Welchman bombe) — and, throughout, a measure of difficulty: the size of each key space, how known information shrinks it, and whether it can be searched in a few minutes.</Description>
     <PackageTags>cryptography;cryptanalysis;cipher;enigma;bombe;vigenere;substitution;frequency-analysis;teaching</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <!-- English statistics, built from public-domain novels by tools/build_language_data.py. -->
